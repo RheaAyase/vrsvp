@@ -1,4 +1,4 @@
-FROM gradle:9.6.1-jdk25-alpine AS base
+FROM docker.io/library/gradle:9.6.1-jdk25-alpine AS base
 
 WORKDIR /app
 COPY development/build.gradle ./
@@ -10,7 +10,7 @@ RUN cp build/distributions/*.zip /srv/ \
     && unzip *.zip \
     && rm *.zip
 
-FROM amazoncorretto:25.0.4-alpine AS production
+FROM docker.io/library/amazoncorretto:25.0.4-alpine AS production
 
 COPY --from=base /srv/app* /srv
 EXPOSE 8080

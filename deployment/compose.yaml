@@ -1,0 +1,20 @@
+# Self-hosting with Podman (or Docker), run from the repository root:
+#   cp deployment/.env.example deployment/.env    # then fill in the bot token
+#   podman compose --file deployment/compose.yaml up --detach --build
+
+services:
+  vrsvp:
+    build:
+      context: ..
+      dockerfile: deployment/Dockerfile
+      target: production
+    image: localhost/vrsvp:latest
+    container_name: vrsvp
+    env_file: .env
+    restart: always
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--spider", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 5s
+      start_period: 30s
+      retries: 3

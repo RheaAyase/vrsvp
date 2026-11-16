@@ -22,6 +22,13 @@ These are used to generate the RSVP form within the Discord client, starting wit
 - `start`: Optional, [HammerTime](https://hammertime.cyou/) timestamp in seconds since 1970, defaults to the current time
 - `rsvp-limit-per-slot`: Optional, a slot cannot have more people signed up than this
 
+## Signing up
+
+Pressing RSVP on an event shows a button for each slot.
+Picking a slot you are not in asks for your role (healer, devotion, asura, bard, dancer, cc, ranged dps, or melee dps),
+which is recorded next to your name like `@User (healer)`.
+Picking a slot you are already in removes you from it.
+
 ## RSVP form editing
 
 The event description can be edited from within Discord by administrators or through permission grants.
@@ -32,6 +39,19 @@ This line in event descriptions sets the RSVP limit:
 - `Maximum number of people that can RSVP for a single slot: (limit)`
 
 Any line that starts with this is a slot: `> #`.
+
+## Self-hosting with Podman
+
+Create a bot in the [Discord developer portal](https://discord.com/developers/applications), then from the repository root:
+
+```sh
+cp deployment/.env.example deployment/.env # Fill in APPLICATION_DISCORD_BOTSECRETTOKEN
+make podmanUp                              # Or: podman compose --file deployment/compose.yaml up --detach --build
+make podmanLogs
+```
+
+For rootless Podman to bring the bot back after a reboot, run `systemctl --user enable --now podman-restart.service` and `loginctl enable-linger $USER` once.
+Docker works too with `docker compose --file deployment/compose.yaml up --detach --build`.
 
 ## Bot permissions
 

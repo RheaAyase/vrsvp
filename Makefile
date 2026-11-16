@@ -49,3 +49,14 @@ deploy:
 
 logs:
 	fly logs -a vrsvp
+
+compose = podman compose --file deployment/compose.yaml
+
+podmanUp:
+	$(compose) up --detach --build
+
+podmanDown:
+	$(compose) down
+
+podmanLogs:
+	$(compose) logs --follow
