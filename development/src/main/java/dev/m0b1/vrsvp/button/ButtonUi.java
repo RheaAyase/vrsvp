@@ -63,6 +63,28 @@ public class ButtonUi {
 	}
 
 	/**
+	 * Builds the ephemeral RSVP controls, either buttons to pick a slot or the role dropdown when there is only one.
+	 *
+	 * Users already signed up for a single slot event also get a button to remove their RSVP.
+	 */
+	public static List<ActionRow> buildRsvpActionRows(int slots, boolean signedUp) {
+
+		if (slots > 1) {
+			return buildIndexedButtonActionRows(ButtonEnum.RSVP.getId(), slots);
+		}
+
+		var actionRows = new LinkedList<ActionRow>();
+		actionRows.add(buildRoleSelectActionRow(0));
+
+		if (signedUp) {
+			var removeId = "%s:0".formatted(ButtonEnum.RSVP.getId());
+			actionRows.add(ActionRow.of(Button.danger(removeId, "Remove RSVP")));
+		}
+
+		return actionRows;
+	}
+
+	/**
 	 * Builds a dropdown of roles for a user to pick from when signing up for the given slot.
 	 */
 	public static ActionRow buildRoleSelectActionRow(int slotIndex) {
@@ -102,6 +124,10 @@ public class ButtonUi {
 
 		var descriptionLines = new LinkedList<>(description.lines().toList());
 
+		if (Parser.countSlotsInText(description) == 0) {
+			return replaceUserSignupInList(descriptionLines, userMention, signup);
+		}
+
 		for (var lineIndex = 0; lineIndex < descriptionLines.size(); lineIndex++) {
 
 			var line = descriptionLines.get(lineIndex);
@@ -115,6 +141,26 @@ public class ButtonUi {
 
 				slotIndex++;
 			}
+		}
+
+		return String.join(Parser.SLOT_DELIMITER, descriptionLines);
+	}
+
+	private static String replaceUserSignupInList(List<String> descriptionLines, String userMention, String signup) {
+
+		descriptionLines.removeIf(line -> Parser.isSignup(line) && line.contains(userMention));
+
+		if (signup != null) {
+
+			var lastSignupIndex = -1;
+			for (var lineIndex = 0; lineIndex < descriptionLines.size(); lineIndex++) {
+				if (Parser.isSignup(descriptionLines.get(lineIndex))) {
+					lastSignupIndex = lineIndex;
+				}
+			}
+
+			var signupIndex = lastSignupIndex >= 0 ? lastSignupIndex + 1 : descriptionLines.size();
+			descriptionLines.add(signupIndex, Parser.SIGNUP_PREFIX + signup);
 		}
 
 		return String.join(Parser.SLOT_DELIMITER, descriptionLines);

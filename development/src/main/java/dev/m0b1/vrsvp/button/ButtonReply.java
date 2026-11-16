@@ -17,6 +17,7 @@ import net.dv8tion.jda.api.events.interaction.component.StringSelectInteractionE
 import org.springframework.stereotype.Service;
 
 import java.util.Collections;
+import java.util.List;
 
 @RequiredArgsConstructor
 @Service
@@ -77,16 +78,26 @@ public class ButtonReply {
 
 	/**
 	 * Replies with an ephemeral list of buttons users can click to toggle RSVP state for slots.
+	 *
+	 * Events with only one slot skip straight to picking a role for it.
 	 */
 	public void rsvpInterest(@Nonnull ButtonInteractionEvent event) {
 
 		var description = Parser.readMessageDescription(event.getMessage());
 		var slots = Parser.countSlotsInText(description);
-		var buttonRows = ButtonUi.buildIndexedButtonActionRows(ButtonEnum.RSVP.getId(), slots);
 
-		event.reply("Use these buttons to toggle your RSVP for any slot.")
+		var reply = "Use these buttons to toggle your RSVP for any slot.";
+		var signedUp = false;
+
+		if (slots <= 1) {
+			var userMention = event.getUser().getAsMention();
+			signedUp = isSignedUp(Parser.findSignupsInSlot(description, 0), userMention);
+			reply = signedUp ? "Pick a new role or remove your RSVP." : "Pick your role.";
+		}
+
+		event.reply(reply)
 			.setEphemeral(true)
-			.setComponents(buttonRows)
+			.setComponents(ButtonUi.buildRsvpActionRows(slots, signedUp))
 			.queue();
 	}
 
@@ -143,26 +154,30 @@ public class ButtonReply {
 			return;
 		}
 
-		var slotLine = findSlotLine(message, slotIndex);
-		if (slotLine == null) {
+		var description = Parser.readMessageDescription(message);
+		var signups = Parser.findSignupsInSlot(description, slotIndex);
+		if (signups == null) {
 			event.editMessage("Slot #%d could not be found".formatted(slotIndex + 1)).queue();
 			return;
 		}
 
-		var userMention = event.getUser().getAsMention();
-		var signedUp = Parser.splitSlotText(slotLine).stream().anyMatch(signup -> signup.contains(userMention));
+		// Only name the slot when there are several to choose from
+		var slots = Parser.countSlotsInText(description);
+		var forSlot = slots > 1 ? " for slot #%d".formatted(slotIndex + 1) : "";
 
-		if ( ! signedUp && rsvpLimitPerSlotExceeded(slotLine, message)) {
+		var userMention = event.getUser().getAsMention();
+		var signedUp = isSignedUp(signups, userMention);
+
+		if ( ! signedUp && rsvpLimitPerSlotExceeded(description, signups)) {
 
 			log.info("RSVP declined for signup limit");
 
-			var errorMessage = "Signup limit exceeded, cannot RSVP for slot #%d".formatted(slotIndex + 1);
-			event.editMessage(errorMessage).queue();
+			event.editMessage("Signup limit exceeded, cannot RSVP%s".formatted(forSlot)).queue();
 			return;
 		}
 
 		if ( ! signedUp && role == null) {
-			event.editMessage("Pick your role for slot #%d".formatted(slotIndex + 1))
+			event.editMessage("Pick your role%s".formatted(forSlot))
 				.setComponents(ButtonUi.buildRoleSelectActionRow(slotIndex))
 				.queue();
 			return;
@@ -178,13 +193,10 @@ public class ButtonReply {
 				.queue();
 
 			var reply = role == null
-				? "RSVP removed for slot #%d".formatted(slotIndex + 1)
-				: "RSVP added for slot #%d as %s".formatted(slotIndex + 1, role.getLabel());
+				? "RSVP removed%s".formatted(forSlot)
+				: "RSVP added%s as %s".formatted(forSlot, role.getLabel());
 
-			var slots = Parser.countSlotsInText(editedDescription);
-			var buttonRows = ButtonUi.buildIndexedButtonActionRows(ButtonEnum.RSVP.getId(), slots);
-
-			event.editMessage(reply).setComponents(buttonRows).queue();
+			event.editMessage(reply).setComponents(ButtonUi.buildRsvpActionRows(slots, role != null)).queue();
 
 		} catch (IllegalArgumentException _) {
 
@@ -197,23 +209,13 @@ public class ButtonReply {
 		}
 	}
 
-	private boolean rsvpLimitPerSlotExceeded(@Nonnull String slotLine, @Nonnull Message message) {
-		var description = Parser.readMessageDescription(message);
+	private boolean rsvpLimitPerSlotExceeded(@Nonnull String description, @Nonnull List<String> signups) {
 		var limit = Parser.findRsvpLimitPerSlotInText(description);
-		return limit != null && currentRsvpCountForSlot(slotLine) >= limit;
+		return limit != null && signups.size() >= limit;
 	}
 
-	private long currentRsvpCountForSlot(@Nonnull String slotLine) {
-		return Parser.splitSlotText(slotLine).stream().filter(data -> data.contains("@")).count();
-	}
-
-	private String findSlotLine(@Nonnull Message message, int slotIndex) {
-		return Parser.readMessageDescription(message)
-			.lines()
-			.filter(Parser::isSlot)
-			.skip(slotIndex)
-			.findFirst()
-			.orElse(null);
+	private boolean isSignedUp(@Nonnull List<String> signups, @Nonnull String userMention) {
+		return signups.stream().anyMatch(signup -> signup.contains(userMention));
 	}
 
 	private Button findRsvpButtonInMessage(@Nonnull Message message) {

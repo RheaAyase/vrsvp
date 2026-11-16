@@ -24,10 +24,12 @@ These are used to generate the RSVP form within the Discord client, starting wit
 
 ## Signing up
 
-Pressing RSVP on an event shows a button for each slot.
-Picking a slot you are not in asks for your role (healer, devotion, asura, bard, dancer, cc, ranged dps, or melee dps),
-which is recorded next to your name like `@User (healer)`.
-Picking a slot you are already in removes you from it.
+Pressing RSVP on an event asks for your role (healer, devotion, asura, bard, dancer, cc, ranged dps, or melee dps),
+which is recorded on its own line under the signups like `@User (healer)`.
+Pressing RSVP again lets you pick a new role or remove your RSVP.
+
+Events edited to have several slots show a button for each slot first.
+Picking a slot you are not in asks for your role, and picking a slot you are already in removes you from it.
 
 ## RSVP form editing
 
@@ -36,9 +38,10 @@ This allows correcting timestamps, giving more information, re-arranging individ
 It is helpful to be aware of [Discord text formatting](https://support.discord.com/hc/en-us/articles/210298617-Markdown-Text-101-Chat-Formatting-Bold-Italic-Underline-).
 
 This line in event descriptions sets the RSVP limit:
-- `Maximum number of people that can RSVP for a single slot: (limit)`
+- `Maximum number of people that can RSVP: (limit)`
 
 Any line that starts with this is a slot: `> #`.
+Without any slot lines, every line that starts with `> ` is a signup.
 
 ## Self-hosting with Podman
 

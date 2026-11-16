@@ -27,7 +27,7 @@ public class SlashCommandReply {
 	}
 
 	/**
-	 * Build an RSVP form everyone can see with a single slot titled with the start timestamp.
+	 * Build an RSVP form everyone can see with a single slot, whose signups get listed one per line under a heading.
 	 */
 	private String buildDescription(@Nonnull SlashCommandInputs inputs) {
 
@@ -38,7 +38,7 @@ public class SlashCommandReply {
 		description.add("- Starts <t:%d:R> on <t:%d:F>".formatted(startTimestamp, startTimestamp));
 		description.add(buildRsvpLimitAddendum(SlashCommandEnum.RSVP_LIMIT_PER_SLOT, inputs.getRsvpLimitPerSlot()));
 		description.add("");
-		description.add("> #1%s<t:%d:t>".formatted(Parser.SIGNUP_DELIMITER, startTimestamp));
+		description.add("**Signups**");
 
 		description.removeIf(Objects::isNull);
 

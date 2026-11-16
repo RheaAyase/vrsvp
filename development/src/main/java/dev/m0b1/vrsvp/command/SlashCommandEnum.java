@@ -11,7 +11,7 @@ public enum SlashCommandEnum {
 		"limit",
 		null,
 		0,
-		"Maximum number of people that can RSVP for a single slot",
+		"Maximum number of people that can RSVP",
 		false
 	),
 

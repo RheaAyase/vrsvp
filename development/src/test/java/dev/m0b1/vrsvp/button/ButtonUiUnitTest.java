@@ -75,6 +75,51 @@ class ButtonUiUnitTest extends TestBase {
 	}
 
 	@Test
+	void buildRsvpActionRowsForMultipleSlotsUsesSlotButtons() {
+
+		var actionRows = ButtonUi.buildRsvpActionRows(2, false);
+
+		assertEquals(1, actionRows.size());
+		assertEquals(2, actionRows.getFirst().getButtons().size());
+	}
+
+	@Test
+	void buildRsvpActionRowsForSingleSlotUsesRoleDropdown() {
+
+		var actionRows = ButtonUi.buildRsvpActionRows(0, false);
+
+		assertEquals(1, actionRows.size());
+		assertEquals("rsvp-role:0", actionRows.getFirst().getComponents().getFirst().asStringSelectMenu().getCustomId());
+	}
+
+	@Test
+	void buildRsvpActionRowsForSingleSlotWhenSignedUpAddsRemoveButton() {
+
+		var actionRows = ButtonUi.buildRsvpActionRows(1, true);
+
+		assertEquals(2, actionRows.size());
+		assertButtonInformation(actionRows.get(1).getButtons().getFirst(), ButtonStyle.DANGER, "rsvp:0", "Remove RSVP", null);
+	}
+
+	@Test
+	void editEmbedDescriptionWithoutSlotLinesAppendsSignupOnItsOwnLine() {
+		var result = editRsvp("**Signups**", "@Testing (healer)");
+		assertEquals("**Signups**\n> @Testing (healer)", result);
+	}
+
+	@Test
+	void editEmbedDescriptionWithoutSlotLinesReplacesExistingSignup() {
+		var result = editRsvp("**Signups**\n> @Testing (bard)\n> @Test1 (cc)", "@Testing (healer)");
+		assertEquals("**Signups**\n> @Test1 (cc)\n> @Testing (healer)", result);
+	}
+
+	@Test
+	void editEmbedDescriptionWithoutSlotLinesRemovesSignup() {
+		var result = editRsvp("**Signups**\n> @Test1 (cc)\n> @Testing (bard)", null);
+		assertEquals("**Signups**\n> @Test1 (cc)", result);
+	}
+
+	@Test
 	void buildSignup() {
 		assertEquals("@Testing (ranged dps)", ButtonUi.buildSignup("@Testing", RoleEnum.RANGED_DPS));
 	}

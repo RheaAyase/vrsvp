@@ -63,7 +63,7 @@ class SlashCommandReplyUnitTest extends TestBase {
 
 			- Starts <t:10:R> on <t:10:F>
 
-			> #1, <t:10:t>""";
+			**Signups**""";
 
 		assertEquals(expectation, textInput.getValue());
 	}
@@ -84,9 +84,9 @@ class SlashCommandReplyUnitTest extends TestBase {
 			**New Event**
 
 			- Starts <t:100:R> on <t:100:F>
-			- Maximum number of people that can RSVP for a single slot: 2
+			- Maximum number of people that can RSVP: 2
 
-			> #1, <t:100:t>""";
+			**Signups**""";
 
 		assertEquals(expectation, textInput.getValue());
 	}

@@ -19,6 +19,8 @@ public class Parser {
 
 	public static final String SLOT_DELIMITER = "\n";
 
+	public static final String SIGNUP_PREFIX = "> ";
+
 	private static final Pattern RSVP_LIMIT_PER_SLOT_PATTERN = buildRegexPatternForLimit(SlashCommandEnum.RSVP_LIMIT_PER_SLOT);
 
 	/**
@@ -52,6 +54,35 @@ public class Parser {
 		return (int) text.lines()
 			.filter(Parser::isSlot)
 			.count();
+	}
+
+	/**
+	 * Determines if given line is a signup in an event without slot lines, where signups are listed one per line.
+	 */
+	public static boolean isSignup(@Nonnull String line) {
+		return line.startsWith(SIGNUP_PREFIX) && ! isSlot(line);
+	}
+
+	/**
+	 * Find the signups for the given slot, or null if that slot does not exist.
+	 *
+	 * Events without slot lines have a single slot whose signups are listed one per line instead.
+	 */
+	public static List<String> findSignupsInSlot(@Nonnull String text, int slotIndex) {
+
+		if (countSlotsInText(text) == 0) {
+			return slotIndex != 0 ? null : text.lines()
+				.filter(Parser::isSignup)
+				.map(line -> line.substring(SIGNUP_PREFIX.length()))
+				.toList();
+		}
+
+		return text.lines()
+			.filter(Parser::isSlot)
+			.skip(slotIndex)
+			.findFirst()
+			.map(line -> splitSlotText(line).stream().filter(data -> data.contains("@")).toList())
+			.orElse(null);
 	}
 
 	/**

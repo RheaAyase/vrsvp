@@ -57,6 +57,37 @@ class ParserUnitTest extends TestBase {
 	}
 
 	@Test
+	void isSignup() {
+		List.of("> ", "> @Testing (healer)").forEach(line -> assertTrue(Parser.isSignup(line)));
+		List.of("> #1", ">", "@Testing", "").forEach(line -> assertFalse(Parser.isSignup(line)));
+	}
+
+	@Test
+	void findSignupsInSlotWithSlotLines() {
+
+		var input = """
+			> #1, <t:5:t>, @Test1 (cc), @Test2
+			> #2, <t:6:t>""";
+
+		assertEquals(List.of("@Test1 (cc)", "@Test2"), Parser.findSignupsInSlot(input, 0));
+		assertEquals(List.of(), Parser.findSignupsInSlot(input, 1));
+		assertNull(Parser.findSignupsInSlot(input, 2));
+	}
+
+	@Test
+	void findSignupsInSlotWithoutSlotLines() {
+
+		var input = """
+			**Signups**
+			> @Test1 (cc)
+			> @Test2 (healer)""";
+
+		assertEquals(List.of("@Test1 (cc)", "@Test2 (healer)"), Parser.findSignupsInSlot(input, 0));
+		assertEquals(List.of(), Parser.findSignupsInSlot("**Signups**", 0));
+		assertNull(Parser.findSignupsInSlot(input, 1));
+	}
+
+	@Test
 	void countSlotsInText() {
 
 		var input = """
@@ -91,7 +122,7 @@ class ParserUnitTest extends TestBase {
 	void findRsvpLimitPerSlotInText() {
 
 		var input = """
-			   Maximum number of people that can RSVP for a single slot: 2 (until further notice)
+			   Maximum number of people that can RSVP: 2 (until further notice)
 			More lines""";
 
 		assertEquals(2, Parser.findRsvpLimitPerSlotInText(input));
@@ -101,8 +132,8 @@ class ParserUnitTest extends TestBase {
 	void findRsvpLimitPerSlotInTextOnlyTakesFirstResult() {
 
 		var input = """
-			Maximum number of people that can RSVP for a single slot: 2
-			Maximum number of people that can RSVP for a single slot: 1""";
+			Maximum number of people that can RSVP: 2
+			Maximum number of people that can RSVP: 1""";
 
 		assertEquals(2, Parser.findRsvpLimitPerSlotInText(input));
 	}
