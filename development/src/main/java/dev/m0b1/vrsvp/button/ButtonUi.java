@@ -4,13 +4,15 @@ import dev.m0b1.vrsvp.util.Parser;
 import lombok.experimental.UtilityClass;
 import net.dv8tion.jda.api.components.actionrow.ActionRow;
 import net.dv8tion.jda.api.components.buttons.Button;
+import net.dv8tion.jda.api.components.selections.SelectOption;
+import net.dv8tion.jda.api.components.selections.StringSelectMenu;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
 
 import jakarta.annotation.Nonnull;
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.function.Predicate;
 
 @UtilityClass
 public class ButtonUi {
@@ -61,11 +63,36 @@ public class ButtonUi {
 	}
 
 	/**
-	 * Toggle (add or remove) a user's mention to the specified slot for the given message.
+	 * Builds a dropdown of roles for a user to pick from when signing up for the given slot.
 	 */
-	public static String editRsvpFromSignupButtonPress(
+	public static ActionRow buildRoleSelectActionRow(int slotIndex) {
+
+		var options = Arrays.stream(RoleEnum.values())
+			.map(role -> SelectOption.of(role.getLabel(), role.getLabel()))
+			.toList();
+
+		var menu = StringSelectMenu.create("%s:%d".formatted(ButtonEnum.RSVP_ROLE.getId(), slotIndex))
+			.setPlaceholder(ButtonEnum.RSVP_ROLE.getLabel())
+			.addOptions(options)
+			.build();
+
+		return ActionRow.of(menu);
+	}
+
+	/**
+	 * Format how a user's signup appears in a slot, like "@User (healer)".
+	 */
+	public static String buildSignup(@Nonnull String userMention, @Nonnull RoleEnum role) {
+		return "%s (%s)".formatted(userMention, role.getLabel());
+	}
+
+	/**
+	 * Remove a user's existing signup from the specified slot and, if given, add their new signup to the end of it.
+	 */
+	public static String editRsvpInSlot(
 		@Nonnull Message message,
 		@Nonnull String userMention,
+		String signup,
 		int slotIndexDestination
 	) {
 
@@ -82,7 +109,7 @@ public class ButtonUi {
 			if (Parser.isSlot(line)) {
 
 				if (slotIndex == slotIndexDestination) {
-					var editedLine = toggleUserMentionInSlot(line, userMention);
+					var editedLine = replaceUserSignupInSlot(line, userMention, signup);
 					descriptionLines.set(lineIndex, editedLine);
 				}
 
@@ -93,19 +120,17 @@ public class ButtonUi {
 		return String.join(Parser.SLOT_DELIMITER, descriptionLines);
 	}
 
-	private static String toggleUserMentionInSlot(String input, String userMention) {
+	private static String replaceUserSignupInSlot(String input, String userMention, String signup) {
 
-		var userMentions = Parser.splitSlotText(input);
+		var signups = Parser.splitSlotText(input);
 
-		Predicate<String> mentionMatchPredicate = (String existingMention) -> existingMention.contains(userMention);
+		signups.removeIf(existingSignup -> existingSignup.contains(userMention));
 
-		if (userMentions.stream().anyMatch(mentionMatchPredicate)) {
-			userMentions.removeIf(mentionMatchPredicate);
-		} else {
-			userMentions.add(userMention);
+		if (signup != null) {
+			signups.add(signup);
 		}
 
-		return String.join(Parser.SIGNUP_DELIMITER, userMentions);
+		return String.join(Parser.SIGNUP_DELIMITER, signups);
 	}
 
 }

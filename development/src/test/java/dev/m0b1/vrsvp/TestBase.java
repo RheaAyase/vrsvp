@@ -17,6 +17,7 @@ import net.dv8tion.jda.api.events.interaction.GenericInteractionCreateEvent;
 import net.dv8tion.jda.api.events.interaction.ModalInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
+import net.dv8tion.jda.api.events.interaction.component.StringSelectInteractionEvent;
 import net.dv8tion.jda.api.interactions.commands.Command;
 import net.dv8tion.jda.api.interactions.commands.privileges.IntegrationPrivilege;
 import net.dv8tion.jda.api.interactions.modals.ModalMapping;
@@ -74,6 +75,7 @@ public abstract class TestBase {
 	@Mock protected RestAction<Message> restActionMessage;
 	@Mock protected Role role;
 	@Mock protected SlashCommandInteractionEvent slashCommandInteractionEvent;
+	@Mock protected StringSelectInteractionEvent stringSelectInteractionEvent;
 	@Mock protected User user;
 
 	@Captor protected ArgumentCaptor<Modal> modalArgumentCaptor;

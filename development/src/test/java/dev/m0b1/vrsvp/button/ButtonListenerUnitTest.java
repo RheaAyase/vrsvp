@@ -10,6 +10,7 @@ import org.mockito.Mock;
 
 import java.util.List;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
@@ -27,6 +28,7 @@ class ButtonListenerUnitTest extends TestBase {
 	void beforeEach() {
 		when(user.getName()).thenReturn("@Testing");
 		when(buttonInteractionEvent.getUser()).thenReturn(user);
+		when(stringSelectInteractionEvent.getUser()).thenReturn(user);
 		when(buttonInteractionEvent.getComponentId()).thenReturn(ButtonEnum.RSVP.getId());
 		when(buttonInteractionEvent.getMember()).thenReturn(member);
 		when(member.hasPermission(Permission.ADMINISTRATOR)).thenReturn(true);
@@ -176,6 +178,52 @@ class ButtonListenerUnitTest extends TestBase {
 		listener.onButtonInteraction(buttonInteractionEvent);
 
 		verify(reply).rsvpToggle(buttonInteractionEvent, message, 1);
+	}
+
+	@Test
+	void onStringSelectInteractionForRsvpSignup() {
+
+		setupFetcher(message);
+		when(stringSelectInteractionEvent.getComponentId()).thenReturn("%s:1".formatted(ButtonEnum.RSVP_ROLE.getId()));
+		when(stringSelectInteractionEvent.getValues()).thenReturn(List.of(RoleEnum.RANGED_DPS.getLabel()));
+		when(stringSelectInteractionEvent.getMessage()).thenReturn(message);
+		when(stringSelectInteractionEvent.getMessageChannel()).thenReturn(messageChannel);
+
+		listener.onStringSelectInteraction(stringSelectInteractionEvent);
+
+		verify(reply).rsvpSignup(stringSelectInteractionEvent, message, 1, RoleEnum.RANGED_DPS);
+	}
+
+	@Test
+	void onStringSelectInteractionFailsIfInputIsNotRecognized() {
+
+		var inputs = List.of(
+			List.of("testing:1", RoleEnum.HEALER.getLabel()),
+			List.of(ButtonEnum.RSVP_ROLE.getId(), RoleEnum.HEALER.getLabel()),
+			List.of("%s:1".formatted(ButtonEnum.RSVP_ROLE.getId()), "unknown role")
+		);
+
+		for (var input : inputs) {
+			when(stringSelectInteractionEvent.getComponentId()).thenReturn(input.get(0));
+			when(stringSelectInteractionEvent.getValues()).thenReturn(List.of(input.get(1)));
+			listener.onStringSelectInteraction(stringSelectInteractionEvent);
+		}
+
+		verify(reply, times(inputs.size())).ephemeral(stringSelectInteractionEvent, "Input not recognized.");
+		verify(reply, never()).rsvpSignup(any(), any(), anyInt(), any());
+	}
+
+	@Test
+	void onStringSelectInteractionFailsWithoutMessageSource() {
+
+		when(stringSelectInteractionEvent.getComponentId()).thenReturn("%s:0".formatted(ButtonEnum.RSVP_ROLE.getId()));
+		when(stringSelectInteractionEvent.getValues()).thenReturn(List.of(RoleEnum.HEALER.getLabel()));
+		when(stringSelectInteractionEvent.getMessage()).thenReturn(null);
+
+		listener.onStringSelectInteraction(stringSelectInteractionEvent);
+
+		verify(reply).ephemeral(stringSelectInteractionEvent, Properties.FORM_NOT_FOUND_REPLY);
+		verify(reply, never()).rsvpSignup(any(), any(), anyInt(), any());
 	}
 
 	// Test utility method(s)

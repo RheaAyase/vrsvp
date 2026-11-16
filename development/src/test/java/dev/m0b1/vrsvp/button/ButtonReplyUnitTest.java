@@ -41,6 +41,12 @@ class ButtonReplyUnitTest extends TestBase {
 		when(buttonInteractionEvent.editMessage(anyString())).thenReturn(messageEditCallbackAction);
 		when(buttonInteractionEvent.replyModal(any())).thenReturn(modalCallbackAction);
 
+		when(stringSelectInteractionEvent.getUser()).thenReturn(user);
+		when(stringSelectInteractionEvent.editMessage(anyString())).thenReturn(messageEditCallbackAction);
+
+		when(messageEditCallbackAction.setComponents(any(MessageTopLevelComponent.class))).thenReturn(messageEditCallbackAction);
+		when(messageEditCallbackAction.setComponents(anyCollection())).thenReturn(messageEditCallbackAction);
+
 		when(replyCallbackAction.setEphemeral(true)).thenReturn(replyCallbackAction);
 		when(replyCallbackAction.setComponents(any(MessageTopLevelComponent.class))).thenReturn(replyCallbackAction);
 		when(replyCallbackAction.setComponents(anyCollection())).thenReturn(replyCallbackAction);
@@ -154,15 +160,15 @@ class ButtonReplyUnitTest extends TestBase {
 	}
 
 	@Test
-	void rsvpToggleFailsIfSignupWouldPutMessageOverContentLengthLimits() {
+	void rsvpSignupFailsIfSignupWouldPutMessageOverContentLengthLimits() {
 
-		var description = "> #1";
+		var description = "\n> #1";
 		var charactersNeededToFillUpDescription = Message.MAX_CONTENT_LENGTH - description.length();
 		description = generateString(charactersNeededToFillUpDescription) + description;
 		when(messageEmbed.getDescription()).thenReturn(description);
 		when(messageEditAction.setContent(any())).thenThrow(new IllegalArgumentException());
 
-		reply.rsvpToggle(buttonInteractionEvent, message, 1);
+		reply.rsvpSignup(stringSelectInteractionEvent, message, 0, RoleEnum.HEALER);
 
 		verify(messageEditAction).setContent(any());
 		verify(messageEditAction, never()).queue();
@@ -177,7 +183,7 @@ class ButtonReplyUnitTest extends TestBase {
 
 		reply.rsvpToggle(buttonInteractionEvent, message, 1);
 
-		verify(buttonInteractionEvent).editMessage("RSVP state toggled for slot #2");
+		verify(buttonInteractionEvent).editMessage("RSVP removed for slot #2");
 		verify(messageEditCallbackAction).queue();
 		verify(message).editMessageEmbeds(Collections.emptyList());
 		verify(messageEditAction).setContent(any());
@@ -185,15 +191,14 @@ class ButtonReplyUnitTest extends TestBase {
 	}
 
 	@Test
-	void rsvpToggleWithoutLimits() {
+	void rsvpToggleWhenNotSignedUpPromptsForRole() {
 
 		reply.rsvpToggle(buttonInteractionEvent, message, 0);
 
-		verify(buttonInteractionEvent).editMessage("RSVP state toggled for slot #1");
+		verify(buttonInteractionEvent).editMessage("Pick your role for slot #1");
+		verify(messageEditCallbackAction).setComponents(any(MessageTopLevelComponent.class));
 		verify(messageEditCallbackAction).queue();
-		verify(message).editMessageEmbeds(Collections.emptyList());
-		verify(messageEditAction).setContent(any());
-		verify(messageEditAction).queue();
+		verify(message, never()).editMessageEmbeds(Collections.emptyList());
 	}
 
 	@Test
@@ -203,10 +208,9 @@ class ButtonReplyUnitTest extends TestBase {
 
 		reply.rsvpToggle(buttonInteractionEvent, message, 1);
 
-		verify(buttonInteractionEvent).editMessage("RSVP state toggled for slot #2");
+		verify(buttonInteractionEvent).editMessage("Slot #2 could not be found");
 		verify(messageEditCallbackAction).queue();
-		verify(messageEditAction).setContent("");
-		verify(messageEditAction).queue();
+		verify(message, never()).editMessageEmbeds(Collections.emptyList());
 	}
 
 	@Test
@@ -216,21 +220,59 @@ class ButtonReplyUnitTest extends TestBase {
 
 		reply.rsvpToggle(buttonInteractionEvent, message, 0);
 
-		verify(buttonInteractionEvent).editMessage("RSVP state toggled for slot #1");
+		verify(buttonInteractionEvent).editMessage("RSVP removed for slot #1");
 		verify(messageEditCallbackAction).queue();
 		verify(messageEditAction).setContent("> #1");
 		verify(messageEditAction).queue();
 	}
 
 	@Test
-	void rsvpToggleStayingMeetingLimits() {
+	void rsvpSignupAddsRoleNextToUserMention() {
+
+		reply.rsvpSignup(stringSelectInteractionEvent, message, 0, RoleEnum.HEALER);
+
+		verify(stringSelectInteractionEvent).editMessage("RSVP added for slot #1 as healer");
+		verify(messageEditCallbackAction).setComponents(anyCollection());
+		verify(messageEditCallbackAction).queue();
+		verify(message).editMessageEmbeds(Collections.emptyList());
+		verify(messageEditAction).setContent("> #1, @Testing (healer)");
+		verify(messageEditAction).queue();
+	}
+
+	@Test
+	void rsvpSignupReplacesExistingRole() {
+
+		when(messageEmbed.getDescription()).thenReturn("> #1, @Testing (bard)");
+
+		reply.rsvpSignup(stringSelectInteractionEvent, message, 0, RoleEnum.MELEE_DPS);
+
+		verify(stringSelectInteractionEvent).editMessage("RSVP added for slot #1 as melee dps");
+		verify(messageEditAction).setContent("> #1, @Testing (melee dps)");
+		verify(messageEditAction).queue();
+	}
+
+	@Test
+	void rsvpSignupFailsIfRsvpLimitPerSlotExceeded() {
+
+		var rule = "%s: 1".formatted(SlashCommandEnum.RSVP_LIMIT_PER_SLOT.getDescription());
+		when(messageEmbed.getDescription()).thenReturn("%s%n> #1, @Other (cc)".formatted(rule));
+
+		reply.rsvpSignup(stringSelectInteractionEvent, message, 0, RoleEnum.HEALER);
+
+		verify(stringSelectInteractionEvent).editMessage("Signup limit exceeded, cannot RSVP for slot #1");
+		verify(messageEditCallbackAction).queue();
+		verify(message, never()).editMessageEmbeds(Collections.emptyList());
+	}
+
+	@Test
+	void rsvpSignupStayingMeetingLimits() {
 
 		var limitSlot = "%s: 1".formatted(SlashCommandEnum.RSVP_LIMIT_PER_SLOT.getDescription());
 		when(messageEmbed.getDescription()).thenReturn("%s%n> #1".formatted(limitSlot));
 
-		reply.rsvpToggle(buttonInteractionEvent, message, 0);
+		reply.rsvpSignup(stringSelectInteractionEvent, message, 0, RoleEnum.BARD);
 
-		verify(buttonInteractionEvent).editMessage("RSVP state toggled for slot #1");
+		verify(stringSelectInteractionEvent).editMessage("RSVP added for slot #1 as bard");
 		verify(messageEditCallbackAction).queue();
 		verify(message).editMessageEmbeds(Collections.emptyList());
 		verify(messageEditAction).setContent(any());
@@ -238,14 +280,14 @@ class ButtonReplyUnitTest extends TestBase {
 	}
 
 	@Test
-	void rsvpToggleStayingUnderLimits() {
+	void rsvpSignupStayingUnderLimits() {
 
 		var limitSlot = "%s: 2".formatted(SlashCommandEnum.RSVP_LIMIT_PER_SLOT.getDescription());
 		when(messageEmbed.getDescription()).thenReturn("%s%n> #1".formatted(limitSlot));
 
-		reply.rsvpToggle(buttonInteractionEvent, message, 0);
+		reply.rsvpSignup(stringSelectInteractionEvent, message, 0, RoleEnum.BARD);
 
-		verify(buttonInteractionEvent).editMessage("RSVP state toggled for slot #1");
+		verify(stringSelectInteractionEvent).editMessage("RSVP added for slot #1 as bard");
 		verify(messageEditCallbackAction).queue();
 		verify(message).editMessageEmbeds(Collections.emptyList());
 		verify(messageEditAction).setContent(any());

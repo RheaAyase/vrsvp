@@ -12,10 +12,11 @@ import net.dv8tion.jda.api.components.buttons.Button;
 import net.dv8tion.jda.api.components.replacer.ComponentReplacer;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
+import net.dv8tion.jda.api.events.interaction.component.GenericComponentInteractionCreateEvent;
+import net.dv8tion.jda.api.events.interaction.component.StringSelectInteractionEvent;
 import org.springframework.stereotype.Service;
 
 import java.util.Collections;
-import java.util.LinkedList;
 
 @RequiredArgsConstructor
 @Service
@@ -90,12 +91,45 @@ public class ButtonReply {
 	}
 
 	/**
-	 * Toggles RSVP state for given user and slot and then adjusts source ephemeral message to reflect the change.
+	 * Removes the user from the given slot if they are signed up, otherwise prompts them to pick a role for it.
 	 */
 	public void rsvpToggle(
 		@Nonnull ButtonInteractionEvent event,
 		@Nonnull Message message,
 		int slotIndex
+	) {
+		rsvpUpdate(event, message, slotIndex, null);
+	}
+
+	/**
+	 * Signs the user up for the given slot with their chosen role, replacing any role they already had there.
+	 */
+	public void rsvpSignup(
+		@Nonnull StringSelectInteractionEvent event,
+		@Nonnull Message message,
+		int slotIndex,
+		@Nonnull RoleEnum role
+	) {
+		rsvpUpdate(event, message, slotIndex, role);
+	}
+
+	/**
+	 * Generic ephemeral reply in response to a button press, mostly for validation errors or development feedback.
+	 */
+	public void ephemeral(@Nonnull GenericComponentInteractionCreateEvent event, String message) {
+		event.reply(message).setEphemeral(true).queue();
+	}
+
+	/**
+	 * Adjusts RSVP state for given user and slot and then adjusts source ephemeral message to reflect the change.
+	 *
+	 * Without a role, a user already in the slot is removed and anyone else is asked to pick a role first.
+	 */
+	private void rsvpUpdate(
+		@Nonnull GenericComponentInteractionCreateEvent event,
+		@Nonnull Message message,
+		int slotIndex,
+		RoleEnum role
 	) {
 
 		Mdc.put(event);
@@ -109,10 +143,16 @@ public class ButtonReply {
 			return;
 		}
 
-		var userMention = event.getUser().getAsMention();
-		var editedDescription = ButtonUi.editRsvpFromSignupButtonPress(message, userMention, slotIndex);
+		var slotLine = findSlotLine(message, slotIndex);
+		if (slotLine == null) {
+			event.editMessage("Slot #%d could not be found".formatted(slotIndex + 1)).queue();
+			return;
+		}
 
-		if (rsvpLimitsExceeded(message, editedDescription, slotIndex)) {
+		var userMention = event.getUser().getAsMention();
+		var signedUp = Parser.splitSlotText(slotLine).stream().anyMatch(signup -> signup.contains(userMention));
+
+		if ( ! signedUp && rsvpLimitPerSlotExceeded(slotLine, message)) {
 
 			log.info("RSVP declined for signup limit");
 
@@ -121,14 +161,30 @@ public class ButtonReply {
 			return;
 		}
 
+		if ( ! signedUp && role == null) {
+			event.editMessage("Pick your role for slot #%d".formatted(slotIndex + 1))
+				.setComponents(ButtonUi.buildRoleSelectActionRow(slotIndex))
+				.queue();
+			return;
+		}
+
+		var signup = role == null ? null : ButtonUi.buildSignup(userMention, role);
+		var editedDescription = ButtonUi.editRsvpInSlot(message, userMention, signup, slotIndex);
+
 		try {
 
 			message.editMessageEmbeds(Collections.emptyList())
 				.setContent(editedDescription)
 				.queue();
 
-			var reply = "RSVP state toggled for slot #%d".formatted(slotIndex + 1);
-			event.editMessage(reply).queue();
+			var reply = role == null
+				? "RSVP removed for slot #%d".formatted(slotIndex + 1)
+				: "RSVP added for slot #%d as %s".formatted(slotIndex + 1, role.getLabel());
+
+			var slots = Parser.countSlotsInText(editedDescription);
+			var buttonRows = ButtonUi.buildIndexedButtonActionRows(ButtonEnum.RSVP.getId(), slots);
+
+			event.editMessage(reply).setComponents(buttonRows).queue();
 
 		} catch (IllegalArgumentException _) {
 
@@ -141,51 +197,23 @@ public class ButtonReply {
 		}
 	}
 
-	/**
-	 * Generic ephemeral reply in response to a button press, mostly for validation errors or development feedback.
-	 */
-	public void ephemeral(@Nonnull ButtonInteractionEvent event, String message) {
-		event.reply(message).setEphemeral(true).queue();
-	}
-
-	private boolean rsvpLimitsExceeded(
-		@Nonnull Message message,
-		String editedDescription,
-		int slotIndex
-	) {
-
-		var originalDescription = Parser.readMessageDescription(message);
-
-		return editedDescription.length() > originalDescription.length()
-			&& rsvpLimitPerSlotExceeded(message, slotIndex);
-	}
-
-	private boolean rsvpLimitPerSlotExceeded(@Nonnull Message message, int slotIndex) {
+	private boolean rsvpLimitPerSlotExceeded(@Nonnull String slotLine, @Nonnull Message message) {
 		var description = Parser.readMessageDescription(message);
 		var limit = Parser.findRsvpLimitPerSlotInText(description);
-		return limit != null && currentRsvpCountForSlot(message, slotIndex) >= limit;
+		return limit != null && currentRsvpCountForSlot(slotLine) >= limit;
 	}
 
-	private long currentRsvpCountForSlot(@Nonnull Message message, int slotIndexDestination) {
+	private long currentRsvpCountForSlot(@Nonnull String slotLine) {
+		return Parser.splitSlotText(slotLine).stream().filter(data -> data.contains("@")).count();
+	}
 
-		var slotIndex = 0;
-		var description = Parser.readMessageDescription(message);
-		var descriptionLines = new LinkedList<>(description.lines().toList());
-
-		var count = 0L;
-		for (String line : descriptionLines) {
-			if (Parser.isSlot(line)) {
-
-				if (slotIndex == slotIndexDestination) {
-					count = Parser.splitSlotText(line).stream().filter(data -> data.contains("@")).count();
-					break;
-				}
-
-				slotIndex++;
-			}
-		}
-
-		return count;
+	private String findSlotLine(@Nonnull Message message, int slotIndex) {
+		return Parser.readMessageDescription(message)
+			.lines()
+			.filter(Parser::isSlot)
+			.skip(slotIndex)
+			.findFirst()
+			.orElse(null);
 	}
 
 	private Button findRsvpButtonInMessage(@Nonnull Message message) {

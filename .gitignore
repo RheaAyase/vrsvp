@@ -1,6 +1,9 @@
 # Editor
 .idea
 
+# Secrets
+deployment/.env
+
 # Build system
 .gradle
 build

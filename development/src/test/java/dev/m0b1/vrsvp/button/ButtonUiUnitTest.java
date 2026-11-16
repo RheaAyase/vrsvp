@@ -63,26 +63,49 @@ class ButtonUiUnitTest extends TestBase {
 	}
 
 	@Test
-	void editEmbedDescriptionFromRsvpAddsUserMention() {
-		var result = toggleRsvp("> #1, <t:5:t>");
-		assertEquals("> #1, <t:5:t>, @Testing", result);
+	void buildRoleSelectActionRow() {
+
+		var menu = ButtonUi.buildRoleSelectActionRow(2).getComponents().getFirst().asStringSelectMenu();
+
+		assertEquals("rsvp-role:2", menu.getCustomId());
+		assertEquals(ButtonEnum.RSVP_ROLE.getLabel(), menu.getPlaceholder());
+		assertEquals(RoleEnum.values().length, menu.getOptions().size());
+		assertEquals("healer", menu.getOptions().getFirst().getValue());
+		assertEquals("melee dps", menu.getOptions().getLast().getLabel());
+	}
+
+	@Test
+	void buildSignup() {
+		assertEquals("@Testing (ranged dps)", ButtonUi.buildSignup("@Testing", RoleEnum.RANGED_DPS));
+	}
+
+	@Test
+	void editEmbedDescriptionFromRsvpAddsSignup() {
+		var result = editRsvp("> #1, <t:5:t>", "@Testing (healer)");
+		assertEquals("> #1, <t:5:t>, @Testing (healer)", result);
+	}
+
+	@Test
+	void editEmbedDescriptionFromRsvpWithExistingSignupReplacesIt() {
+		var result = editRsvp("> #1, <t:5:t>, @Testing (bard), @Test1 (cc)", "@Testing (healer)");
+		assertEquals("> #1, <t:5:t>, @Test1 (cc), @Testing (healer)", result);
 	}
 
 	@Test
 	void editEmbedDescriptionFromRsvpWithExistingMentionRemovesIt() {
-		var result = toggleRsvp("> #1, <t:5:t>, @Testing");
+		var result = editRsvp("> #1, <t:5:t>, @Testing", null);
 		assertEquals("> #1, <t:5:t>", result);
 	}
 
 	@Test
 	void editEmbedDescriptionFromRsvpWithExistingMentionsAddsToEnd() {
-		var result = toggleRsvp("> #1, <t:5:t>, @Test1, @Test2");
+		var result = editRsvp("> #1, <t:5:t>, @Test1, @Test2", "@Testing");
 		assertEquals("> #1, <t:5:t>, @Test1, @Test2, @Testing", result);
 	}
 
 	@Test
 	void editEmbedDescriptionFromRsvpWithWithExistingMentionBetweenOtherMentionsRemovesIt() {
-		var result = toggleRsvp("> #1, <t:5:t>, @Test1, @Testing, @Test2");
+		var result = editRsvp("> #1, <t:5:t>, @Test1, @Testing (dancer), @Test2", null);
 		assertEquals("> #1, <t:5:t>, @Test1, @Test2", result);
 	}
 
@@ -92,7 +115,7 @@ class ButtonUiUnitTest extends TestBase {
 		var embed = new EmbedBuilder().setDescription("> #1, <t:0:F>, @Testing\n> #2, <t:1:F>").build();
 		when(message.getEmbeds()).thenReturn(List.of(embed));
 
-		var editedDescription = ButtonUi.editRsvpFromSignupButtonPress(message, "@Testing", 1);
+		var editedDescription = ButtonUi.editRsvpInSlot(message, "@Testing", "@Testing", 1);
 		var slots = editedDescription.split("\n");
 
 		assertEquals("> #1, <t:0:F>, @Testing", slots[0]);
@@ -126,12 +149,12 @@ class ButtonUiUnitTest extends TestBase {
 		}
 	}
 
-	private String toggleRsvp(String slotValue) {
+	private String editRsvp(String slotValue, String signup) {
 
 		var embed = new EmbedBuilder().setDescription(slotValue).build();
 		when(message.getEmbeds()).thenReturn(List.of(embed));
 
-		return ButtonUi.editRsvpFromSignupButtonPress(message, "@Testing", 0);
+		return ButtonUi.editRsvpInSlot(message, "@Testing", signup, 0);
 	}
 
 }

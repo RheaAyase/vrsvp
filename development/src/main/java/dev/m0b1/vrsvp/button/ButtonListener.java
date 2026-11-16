@@ -8,6 +8,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
+import net.dv8tion.jda.api.events.interaction.component.GenericComponentInteractionCreateEvent;
+import net.dv8tion.jda.api.events.interaction.component.StringSelectInteractionEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import org.springframework.stereotype.Service;
 
@@ -60,17 +62,46 @@ public class ButtonListener extends ListenerAdapter {
 		}
 	}
 
-	private String[] getButtonInteractionId(@Nonnull ButtonInteractionEvent event) {
+	/**
+	 * Handle role picks from the dropdown shown when a user signs up for a slot, like "rsvp-role:0".
+	 */
+	@Override
+	public void onStringSelectInteraction(@Nonnull StringSelectInteractionEvent event) {
+
+		Mdc.put(event);
+
+		log.atInfo()
+			.setMessage("RSVP role selection received")
+			.addKeyValue("menu", event.getComponentId())
+			.addKeyValue("values", event.getValues())
+			.log();
+
+		var menuIdAction = getButtonInteractionAction(event);
+		var slotIndex = getButtonInteractionContext(event);
+		var role = event.getValues().isEmpty() ? null : RoleEnum.getByLabel(event.getValues().getFirst());
+
+		if (ButtonEnum.getById(menuIdAction) != ButtonEnum.RSVP_ROLE || slotIndex == null || role == null) {
+			reply.ephemeral(event, "Input not recognized.");
+			return;
+		}
+
+		var rsvp = getMessageSource(event);
+		if (rsvp != null) {
+			reply.rsvpSignup(event, rsvp, slotIndex, role);
+		}
+	}
+
+	private String[] getButtonInteractionId(@Nonnull GenericComponentInteractionCreateEvent event) {
 		var buttonId = event.getComponentId();
 		return buttonId.split(":");
 	}
 
-	private String getButtonInteractionAction(@Nonnull ButtonInteractionEvent event) {
+	private String getButtonInteractionAction(@Nonnull GenericComponentInteractionCreateEvent event) {
 		var buttonId = getButtonInteractionId(event);
 		return buttonId[0];
 	}
 
-	private Integer getButtonInteractionContext(@Nonnull ButtonInteractionEvent event) {
+	private Integer getButtonInteractionContext(@Nonnull GenericComponentInteractionCreateEvent event) {
 
 		var buttonId = getButtonInteractionId(event);
 		if (buttonId.length < 2) {
@@ -110,7 +141,7 @@ public class ButtonListener extends ListenerAdapter {
 		}
 	}
 
-	private Message getMessageSource(@Nonnull ButtonInteractionEvent event) {
+	private Message getMessageSource(@Nonnull GenericComponentInteractionCreateEvent event) {
 
 		var rsvp = Fetcher.getEphemeralMessageSource(event.getMessage(), event.getMessageChannel());
 		if (rsvp == null) {
