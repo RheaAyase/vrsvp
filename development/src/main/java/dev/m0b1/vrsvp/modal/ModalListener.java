@@ -33,7 +33,7 @@ public class ModalListener extends ListenerAdapter {
 			.addKeyValue("modalId", event.getModalId())
 			.log();
 
-		var actionId = event.getModalId();
+		var actionId = event.getModalId().split(":")[0];
 		var modalEnum = ModalEnum.getById(actionId);
 		if (modalEnum == ModalEnum.UNKNOWN) {
 			reply.ephemeral(event, "Input not recognized.");

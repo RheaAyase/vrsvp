@@ -95,7 +95,7 @@ class ModalListenerUnitTest extends TestBase {
 		setupFetcher(message);
 
 		when(modalMapping.getAsString()).thenReturn("Testing");
-		when(modalInteractionEvent.getModalId()).thenReturn(ModalEnum.EVENT_CREATION.getId());
+		when(modalInteractionEvent.getModalId()).thenReturn(ModalEnum.EVENT_CREATION.getId() + ":unique");
 		when(modalInteractionEvent.getValue(any())).thenReturn(modalMapping);
 		when(modalInteractionEvent.getMessage()).thenReturn(message);
 		when(modalInteractionEvent.getMessageChannel()).thenReturn(messageChannel);

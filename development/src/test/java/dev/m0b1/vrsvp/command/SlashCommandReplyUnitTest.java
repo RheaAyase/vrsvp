@@ -41,7 +41,7 @@ class SlashCommandReplyUnitTest extends TestBase {
 
 		var label = getLabelComponentFromModal();
 		var textInput = getTextInputComponentFromModal();
-		Assertions.assertEquals(ModalEnum.EVENT_CREATION.getId(), textInput.getCustomId());
+		Assertions.assertTrue(textInput.getCustomId().startsWith(ModalEnum.EVENT_CREATION.getId() + ":"));
 		assertEquals(ModalEnum.EVENT_CREATION.getLabel(), label.getLabel());
 		assertEquals(ModalEnum.EVENT_CREATION.getPlaceholder(), textInput.getPlaceHolder());
 		assertEquals(TextInputStyle.PARAGRAPH, textInput.getStyle());

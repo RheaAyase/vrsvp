@@ -11,6 +11,8 @@ import net.dv8tion.jda.internal.components.textinput.TextInputImpl;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ModalUiUnitTest extends TestBase {
 
@@ -36,7 +38,7 @@ class ModalUiUnitTest extends TestBase {
 
 		var label = getLabelComponent(modal);
 		var textInput = getTextInputComponent(modal);
-		assertEquals(ModalEnum.EVENT_DESCRIPTION.getId(), textInput.getCustomId());
+		assertEquals(modal.getId(), textInput.getCustomId());
 		assertEquals(ModalEnum.EVENT_DESCRIPTION.getLabel(), label.getLabel());
 		assertEquals(ModalEnum.EVENT_DESCRIPTION.getPlaceholder(), textInput.getPlaceHolder());
 		assertEquals(TextInputStyle.PARAGRAPH, textInput.getStyle());
@@ -49,8 +51,17 @@ class ModalUiUnitTest extends TestBase {
 
 		var modal = ModalUi.editText(ModalEnum.EVENT_DESCRIPTION, "Testing");
 
-		assertEquals(ModalEnum.EVENT_DESCRIPTION.getId(), modal.getId());
+		assertTrue(modal.getId().startsWith(ModalEnum.EVENT_DESCRIPTION.getId() + ":"));
 		assertEquals("VRSVP", modal.getTitle());
+	}
+
+	@Test
+	void modalIdsAreUniqueSoDiscordCannotRestoreOldDrafts() {
+
+		var first = ModalUi.editText(ModalEnum.EVENT_CREATION, "Testing");
+		var second = ModalUi.editText(ModalEnum.EVENT_CREATION, "Testing");
+
+		assertNotEquals(first.getId(), second.getId());
 	}
 
 	private Label getLabelComponent(Modal modal) {
