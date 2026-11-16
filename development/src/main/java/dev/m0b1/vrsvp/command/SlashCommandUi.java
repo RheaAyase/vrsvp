@@ -10,7 +10,7 @@ import net.dv8tion.jda.api.interactions.commands.build.SlashCommandData;
 @UtilityClass
 public class SlashCommandUi {
 
-	public static final String INVOCATION = "vrsvp";
+	public static final String INVOCATION = "rsvp";
 
 	/**
 	 * Builds the only slash command this bot concerns itself with and supplies the required input options.
