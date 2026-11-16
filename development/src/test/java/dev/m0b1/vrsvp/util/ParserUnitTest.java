@@ -82,35 +82,6 @@ class ParserUnitTest extends TestBase {
 	}
 
 	@Test
-	void findRsvpLimitPerPersonInTextWithoutMatch() {
-		assertNull(Parser.findRsvpLimitPerPersonInText(null));
-		assertNull(Parser.findRsvpLimitPerPersonInText(" Maximum number of slots: 2"));
-	}
-
-	@Test
-	void findRsvpLimitPerPersonInText() {
-
-		var input = """
-
-			Arbitrary prefix Maximum number of slots a person can RSVP for: 3 Suffix
-			More lines""";
-
-
-		assertEquals(3, Parser.findRsvpLimitPerPersonInText(input));
-	}
-
-	@Test
-	void findRsvpLimitPerPersonInTextOnlyTakesFirstResult() {
-
-		var input = """
-			Maximum number of slots a person can RSVP for: 3
-			Maximum number of slots a person can RSVP for: 1""";
-
-
-		assertEquals(3, Parser.findRsvpLimitPerPersonInText(input));
-	}
-
-	@Test
 	void findRsvpLimitPerSlotInTextWithoutMatch() {
 		assertNull(Parser.findRsvpLimitPerSlotInText(null));
 		assertNull(Parser.findRsvpLimitPerSlotInText(" Maximum number of people: 2"));

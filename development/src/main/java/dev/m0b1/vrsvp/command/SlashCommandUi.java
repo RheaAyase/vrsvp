@@ -22,9 +22,6 @@ public class SlashCommandUi {
 
 		// Order matters here, this was chosen for the most logical flow
 		addOption(data, SlashCommandEnum.START);
-		addOption(data, SlashCommandEnum.SLOTS);
-		addOption(data, SlashCommandEnum.DURATION);
-		addOption(data, SlashCommandEnum.RSVP_LIMIT_PER_PERSON);
 		addOption(data, SlashCommandEnum.RSVP_LIMIT_PER_SLOT);
 
 		return data;

@@ -19,8 +19,6 @@ public class Parser {
 
 	public static final String SLOT_DELIMITER = "\n";
 
-	private static final Pattern RSVP_LIMIT_PER_PERSON_PATTERN = buildRegexPatternForLimit(SlashCommandEnum.RSVP_LIMIT_PER_PERSON);
-
 	private static final Pattern RSVP_LIMIT_PER_SLOT_PATTERN = buildRegexPatternForLimit(SlashCommandEnum.RSVP_LIMIT_PER_SLOT);
 
 	/**
@@ -61,13 +59,6 @@ public class Parser {
 	 */
 	public static List<String> splitSlotText(@Nonnull String text) {
 		return new LinkedList<>(Arrays.stream(text.split(SIGNUP_DELIMITER)).toList());
-	}
-
-	/**
-	 * Find the first result matching the RSVP limit per person pattern and return the desired integer if found.
-	 */
-	public static Integer findRsvpLimitPerPersonInText(String text) {
-		return runRegexPatternToFindNumberInText(RSVP_LIMIT_PER_PERSON_PATTERN, text);
 	}
 
 	/**

@@ -43,11 +43,8 @@ public class SlashCommandListener extends ListenerAdapter {
 		Mdc.put(event);
 
 		var inputs = new SlashCommandInputs();
-		inputs.setDurationInMinutes(getSlashCommandInput(event, SlashCommandEnum.DURATION));
-		inputs.setSlots(getSlashCommandInput(event, SlashCommandEnum.SLOTS));
 		inputs.setStartTimestamp(getSlashCommandInput(event, SlashCommandEnum.START));
 		inputs.setRsvpLimitPerSlot(getSlashCommandInput(event, SlashCommandEnum.RSVP_LIMIT_PER_SLOT));
-		inputs.setRsvpLimitPerPerson(getSlashCommandInput(event, SlashCommandEnum.RSVP_LIMIT_PER_PERSON));
 
 		log.atInfo()
 			.setMessage("Slash command received")

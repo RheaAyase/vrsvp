@@ -33,8 +33,6 @@ class SlashCommandReplyUnitTest extends TestBase {
 	void rsvpCreationReturnsModalToCheckInputs() {
 
 		inputs.setStartTimestamp(1);
-		inputs.setSlots(2);
-		inputs.setDurationInMinutes(20);
 
 		reply.rsvpCreation(slashCommandInteractionEvent, inputs);
 
@@ -52,8 +50,6 @@ class SlashCommandReplyUnitTest extends TestBase {
 	@Test
 	void rsvpCreationWithoutRsvpLimitAddendum() {
 
-		inputs.setSlots(2);
-		inputs.setDurationInMinutes(5);
 		inputs.setStartTimestamp(10);
 
 		reply.rsvpCreation(slashCommandInteractionEvent, inputs);
@@ -66,10 +62,8 @@ class SlashCommandReplyUnitTest extends TestBase {
 			**New Event**
 
 			- Starts <t:10:R> on <t:10:F>
-			- Each slot is 5 minutes long
 
-			> #1, <t:10:t>
-			> #2, <t:310:t>""";
+			> #1, <t:10:t>""";
 
 		assertEquals(expectation, textInput.getValue());
 	}
@@ -77,10 +71,7 @@ class SlashCommandReplyUnitTest extends TestBase {
 	@Test
 	void rsvpCreationWithRsvpLimitAddendum() {
 
-		inputs.setSlots(3);
-		inputs.setDurationInMinutes(20);
 		inputs.setStartTimestamp(100);
-		inputs.setRsvpLimitPerPerson(3);
 		inputs.setRsvpLimitPerSlot(2);
 
 		reply.rsvpCreation(slashCommandInteractionEvent, inputs);
@@ -93,13 +84,9 @@ class SlashCommandReplyUnitTest extends TestBase {
 			**New Event**
 
 			- Starts <t:100:R> on <t:100:F>
-			- Each slot is 20 minutes long
 			- Maximum number of people that can RSVP for a single slot: 2
-			- Maximum number of slots a person can RSVP for: 3
 
-			> #1, <t:100:t>
-			> #2, <t:1300:t>
-			> #3, <t:2500:t>""";
+			> #1, <t:100:t>""";
 
 		assertEquals(expectation, textInput.getValue());
 	}

@@ -112,7 +112,7 @@ public class ButtonReply {
 		var userMention = event.getUser().getAsMention();
 		var editedDescription = ButtonUi.editRsvpFromSignupButtonPress(message, userMention, slotIndex);
 
-		if (rsvpLimitsExceeded(message, editedDescription, userMention, slotIndex)) {
+		if (rsvpLimitsExceeded(message, editedDescription, slotIndex)) {
 
 			log.info("RSVP declined for signup limit");
 
@@ -151,38 +151,19 @@ public class ButtonReply {
 	private boolean rsvpLimitsExceeded(
 		@Nonnull Message message,
 		String editedDescription,
-		String userMention,
 		int slotIndex
 	) {
 
 		var originalDescription = Parser.readMessageDescription(message);
 
 		return editedDescription.length() > originalDescription.length()
-			&& (rsvpLimitPerPersonExceeded(message, userMention) || rsvpLimitPerSlotExceeded(message, slotIndex));
-	}
-
-	private boolean rsvpLimitPerPersonExceeded(@Nonnull Message message, String userMention) {
-
-		var description = Parser.readMessageDescription(message);
-
-		var limit = Parser.findRsvpLimitPerPersonInText(description);
-		return limit != null && currentRsvpCountForUser(message, userMention) >= limit;
+			&& rsvpLimitPerSlotExceeded(message, slotIndex);
 	}
 
 	private boolean rsvpLimitPerSlotExceeded(@Nonnull Message message, int slotIndex) {
 		var description = Parser.readMessageDescription(message);
 		var limit = Parser.findRsvpLimitPerSlotInText(description);
 		return limit != null && currentRsvpCountForSlot(message, slotIndex) >= limit;
-	}
-
-	private long currentRsvpCountForUser(@Nonnull Message message, String userMention) {
-
-		var description = Parser.readMessageDescription(message);
-
-		return description.lines()
-			.filter(Parser::isSlot)
-			.filter(line -> line.contains(userMention))
-			.count();
 	}
 
 	private long currentRsvpCountForSlot(@Nonnull Message message, int slotIndexDestination) {

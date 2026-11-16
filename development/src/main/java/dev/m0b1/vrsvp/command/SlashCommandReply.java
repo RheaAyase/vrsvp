@@ -27,26 +27,18 @@ public class SlashCommandReply {
 	}
 
 	/**
-	 * Build an RSVP form everyone can see with a given number of time slot, each with an index and incremented timestamp title.
+	 * Build an RSVP form everyone can see with a single slot titled with the start timestamp.
 	 */
 	private String buildDescription(@Nonnull SlashCommandInputs inputs) {
 
-		var slotDurationInSeconds = inputs.getDurationInMinutes() * 60;
 		var startTimestamp = inputs.getStartTimestamp();
 
 		var description = new LinkedList<String>();
 		description.add("**New Event**\n");
 		description.add("- Starts <t:%d:R> on <t:%d:F>".formatted(startTimestamp, startTimestamp));
-		description.add("- Each slot is %d minutes long".formatted(inputs.getDurationInMinutes()));
 		description.add(buildRsvpLimitAddendum(SlashCommandEnum.RSVP_LIMIT_PER_SLOT, inputs.getRsvpLimitPerSlot()));
-		description.add(buildRsvpLimitAddendum(SlashCommandEnum.RSVP_LIMIT_PER_PERSON, inputs.getRsvpLimitPerPerson()));
 		description.add("");
-
-		for (var slotIndex = 0; slotIndex < inputs.getSlots(); slotIndex++) {
-			var slotTimestamp = startTimestamp + (slotDurationInSeconds * slotIndex);
-			var line = "> #%d%s<t:%d:t>".formatted(slotIndex + 1, Parser.SIGNUP_DELIMITER, slotTimestamp);
-			description.add(line);
-		}
+		description.add("> #1%s<t:%d:t>".formatted(Parser.SIGNUP_DELIMITER, startTimestamp));
 
 		description.removeIf(Objects::isNull);
 

@@ -20,9 +20,6 @@ It can also be self-hosted using the source code here.
 These are used to generate the RSVP form within the Discord client, starting with `/vrsvp`.
 
 - `start`: [HammerTime](https://hammertime.cyou/) timestamp
-- `slots`: Timestamp slot count
-- `duration`: Timestamp slot length in minutes
-- `rsvp-limit-per-person`: Optional, a person cannot sign up for more slots than this
 - `rsvp-limit-per-slot`: Optional, a slot cannot have more people signed up than this
 
 ## RSVP form editing
@@ -31,9 +28,8 @@ The event description can be edited from within Discord by administrators or thr
 This allows correcting timestamps, giving more information, re-arranging individuals, and more.
 It is helpful to be aware of [Discord text formatting](https://support.discord.com/hc/en-us/articles/210298617-Markdown-Text-101-Chat-Formatting-Bold-Italic-Underline-).
 
-These lines in event descriptions set RSVP limits:
+This line in event descriptions sets the RSVP limit:
 - `Maximum number of people that can RSVP for a single slot: (limit)`
-- `Maximum number of slots a person can RSVP for: (limit)`
 
 Any line that starts with this is a slot: `> #`.
 

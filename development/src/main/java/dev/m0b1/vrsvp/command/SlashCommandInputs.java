@@ -9,10 +9,7 @@ import lombok.Setter;
 @Setter
 public class SlashCommandInputs {
 
-    private Integer durationInMinutes;
-    private Integer slots;
     private Integer startTimestamp;
 	private Integer rsvpLimitPerSlot;
-	private Integer rsvpLimitPerPerson;
 
 }

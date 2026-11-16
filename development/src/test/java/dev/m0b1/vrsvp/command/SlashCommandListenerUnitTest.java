@@ -49,10 +49,7 @@ class SlashCommandListenerUnitTest extends TestBase {
 		verify(reply).rsvpCreation(eq(slashCommandInteractionEvent), inputsArgumentCaptor.capture());
 
 		var inputs = inputsArgumentCaptor.getValue();
-		assertNull(inputs.getSlots());
-		assertNull(inputs.getDurationInMinutes());
 		assertNull(inputs.getStartTimestamp());
-		assertNull(inputs.getRsvpLimitPerPerson());
 		assertNull(inputs.getRsvpLimitPerSlot());
 	}
 
@@ -69,11 +66,8 @@ class SlashCommandListenerUnitTest extends TestBase {
 			})
 			.toList();
 
-		when(slashCommandInteractionEvent.getOption(SlashCommandEnum.SLOTS.getId())).thenReturn(options.get(0));
-		when(slashCommandInteractionEvent.getOption(SlashCommandEnum.DURATION.getId())).thenReturn(options.get(1));
-		when(slashCommandInteractionEvent.getOption(SlashCommandEnum.START.getId())).thenReturn(options.get(2));
-		when(slashCommandInteractionEvent.getOption(SlashCommandEnum.RSVP_LIMIT_PER_PERSON.getId())).thenReturn(options.get(3));
-		when(slashCommandInteractionEvent.getOption(SlashCommandEnum.RSVP_LIMIT_PER_SLOT.getId())).thenReturn(options.get(4));
+		when(slashCommandInteractionEvent.getOption(SlashCommandEnum.START.getId())).thenReturn(options.get(0));
+		when(slashCommandInteractionEvent.getOption(SlashCommandEnum.RSVP_LIMIT_PER_SLOT.getId())).thenReturn(options.get(1));
 
 		when(slashCommandInteractionEvent.getName()).thenReturn(SlashCommandUi.INVOCATION);
 
@@ -82,11 +76,8 @@ class SlashCommandListenerUnitTest extends TestBase {
 		verify(reply).rsvpCreation(eq(slashCommandInteractionEvent), inputsArgumentCaptor.capture());
 
 		var inputs = inputsArgumentCaptor.getValue();
-		assertEquals(1, inputs.getSlots());
-		assertEquals(2, inputs.getDurationInMinutes());
-		assertEquals(3, inputs.getStartTimestamp());
-		assertEquals(4, inputs.getRsvpLimitPerPerson());
-		assertEquals(5, inputs.getRsvpLimitPerSlot());
+		assertEquals(1, inputs.getStartTimestamp());
+		assertEquals(2, inputs.getRsvpLimitPerSlot());
 	}
 
 }
