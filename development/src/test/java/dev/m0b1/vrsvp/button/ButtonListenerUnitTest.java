@@ -185,13 +185,13 @@ class ButtonListenerUnitTest extends TestBase {
 
 		setupFetcher(message);
 		when(stringSelectInteractionEvent.getComponentId()).thenReturn("%s:1".formatted(ButtonEnum.RSVP_ROLE.getId()));
-		when(stringSelectInteractionEvent.getValues()).thenReturn(List.of(RoleEnum.RANGED_DPS.getLabel()));
+		when(stringSelectInteractionEvent.getValues()).thenReturn(List.of(RoleEnum.RANGED_DPS.getLabel(), RoleEnum.ASURA.getLabel()));
 		when(stringSelectInteractionEvent.getMessage()).thenReturn(message);
 		when(stringSelectInteractionEvent.getMessageChannel()).thenReturn(messageChannel);
 
 		listener.onStringSelectInteraction(stringSelectInteractionEvent);
 
-		verify(reply).rsvpSignup(stringSelectInteractionEvent, message, 1, RoleEnum.RANGED_DPS);
+		verify(reply).rsvpSignup(stringSelectInteractionEvent, message, 1, List.of(RoleEnum.RANGED_DPS, RoleEnum.ASURA));
 	}
 
 	@Test
@@ -200,12 +200,14 @@ class ButtonListenerUnitTest extends TestBase {
 		var inputs = List.of(
 			List.of("testing:1", RoleEnum.HEALER.getLabel()),
 			List.of(ButtonEnum.RSVP_ROLE.getId(), RoleEnum.HEALER.getLabel()),
-			List.of("%s:1".formatted(ButtonEnum.RSVP_ROLE.getId()), "unknown role")
+			List.of("%s:1".formatted(ButtonEnum.RSVP_ROLE.getId()), "unknown role"),
+			List.of("%s:1".formatted(ButtonEnum.RSVP_ROLE.getId()), RoleEnum.HEALER.getLabel(), "unknown role"),
+			List.of("%s:1".formatted(ButtonEnum.RSVP_ROLE.getId()))
 		);
 
 		for (var input : inputs) {
-			when(stringSelectInteractionEvent.getComponentId()).thenReturn(input.get(0));
-			when(stringSelectInteractionEvent.getValues()).thenReturn(List.of(input.get(1)));
+			when(stringSelectInteractionEvent.getComponentId()).thenReturn(input.getFirst());
+			when(stringSelectInteractionEvent.getValues()).thenReturn(input.subList(1, input.size()));
 			listener.onStringSelectInteraction(stringSelectInteractionEvent);
 		}
 

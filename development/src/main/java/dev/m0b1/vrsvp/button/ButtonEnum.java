@@ -11,7 +11,7 @@ public enum ButtonEnum {
 	EDIT_EVENT_ACTIVE("edit-toggle-rsvp-active", "Toggle RSVP Active"),
 	EDIT_EVENT_DESCRIPTION("edit-event-description", "Edit Description"),
 	RSVP("rsvp", "RSVP"),
-	RSVP_ROLE("rsvp-role", "Pick your role"),
+	RSVP_ROLE("rsvp-role", "Pick your roles"),
 	UNKNOWN("unknown", "UNKNOWN");
 
 	private final String id;

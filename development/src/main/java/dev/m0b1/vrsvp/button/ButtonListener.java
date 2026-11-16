@@ -14,6 +14,7 @@ import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import org.springframework.stereotype.Service;
 
 import jakarta.annotation.Nonnull;
+import java.util.Objects;
 
 @RequiredArgsConstructor
 @Service
@@ -78,16 +79,17 @@ public class ButtonListener extends ListenerAdapter {
 
 		var menuIdAction = getButtonInteractionAction(event);
 		var slotIndex = getButtonInteractionContext(event);
-		var role = event.getValues().isEmpty() ? null : RoleEnum.getByLabel(event.getValues().getFirst());
+		var roles = event.getValues().stream().map(RoleEnum::getByLabel).toList();
+		var rolesRecognized = ! roles.isEmpty() && roles.stream().noneMatch(Objects::isNull);
 
-		if (ButtonEnum.getById(menuIdAction) != ButtonEnum.RSVP_ROLE || slotIndex == null || role == null) {
+		if (ButtonEnum.getById(menuIdAction) != ButtonEnum.RSVP_ROLE || slotIndex == null || ! rolesRecognized) {
 			reply.ephemeral(event, "Input not recognized.");
 			return;
 		}
 
 		var rsvp = getMessageSource(event);
 		if (rsvp != null) {
-			reply.rsvpSignup(event, rsvp, slotIndex, role);
+			reply.rsvpSignup(event, rsvp, slotIndex, roles);
 		}
 	}
 

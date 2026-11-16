@@ -1,5 +1,6 @@
 package dev.m0b1.vrsvp.util;
 
+import dev.m0b1.vrsvp.button.RoleEnum;
 import dev.m0b1.vrsvp.command.SlashCommandEnum;
 import lombok.experimental.UtilityClass;
 import net.dv8tion.jda.api.entities.Message;
@@ -20,6 +21,11 @@ public class Parser {
 	public static final String SLOT_DELIMITER = "\n";
 
 	public static final String SIGNUP_PREFIX = "> ";
+
+	// Not ", " since that already separates signups within a slot line
+	public static final String ROLE_DELIMITER = "/";
+
+	private static final Pattern ROLES_PATTERN = Pattern.compile("\\(([^()]*)\\)\\s*$");
 
 	private static final Pattern RSVP_LIMIT_PER_SLOT_PATTERN = buildRegexPatternForLimit(SlashCommandEnum.RSVP_LIMIT_PER_SLOT);
 
@@ -83,6 +89,23 @@ public class Parser {
 			.findFirst()
 			.map(line -> splitSlotText(line).stream().filter(data -> data.contains("@")).toList())
 			.orElse(null);
+	}
+
+	/**
+	 * Find the known roles listed in parentheses at the end of a signup, like "@User (healer/bard)".
+	 */
+	public static List<RoleEnum> findRolesInSignup(@Nonnull String signup) {
+
+		var matches = ROLES_PATTERN.matcher(signup);
+		if ( ! matches.find()) {
+			return List.of();
+		}
+
+		return Arrays.stream(matches.group(1).split(ROLE_DELIMITER))
+			.map(String::strip)
+			.map(RoleEnum::getByLabel)
+			.filter(Objects::nonNull)
+			.toList();
 	}
 
 	/**

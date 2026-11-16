@@ -65,18 +65,18 @@ public class ButtonUi {
 	/**
 	 * Builds the ephemeral RSVP controls, either buttons to pick a slot or the role dropdown when there is only one.
 	 *
-	 * Users already signed up for a single slot event also get a button to remove their RSVP.
+	 * Users already signed up for a single slot event (non-null current roles) also get a button to remove their RSVP.
 	 */
-	public static List<ActionRow> buildRsvpActionRows(int slots, boolean signedUp) {
+	public static List<ActionRow> buildRsvpActionRows(int slots, List<RoleEnum> currentRoles) {
 
 		if (slots > 1) {
 			return buildIndexedButtonActionRows(ButtonEnum.RSVP.getId(), slots);
 		}
 
 		var actionRows = new LinkedList<ActionRow>();
-		actionRows.add(buildRoleSelectActionRow(0));
+		actionRows.add(buildRoleSelectActionRow(0, currentRoles));
 
-		if (signedUp) {
+		if (currentRoles != null) {
 			var removeId = "%s:0".formatted(ButtonEnum.RSVP.getId());
 			actionRows.add(ActionRow.of(Button.danger(removeId, "Remove RSVP")));
 		}
@@ -85,9 +85,11 @@ public class ButtonUi {
 	}
 
 	/**
-	 * Builds a dropdown of roles for a user to pick from when signing up for the given slot.
+	 * Builds a dropdown of roles for a user to pick one or more from when signing up for the given slot.
+	 *
+	 * Any roles the user already has are pre-selected so they only need to adjust them.
 	 */
-	public static ActionRow buildRoleSelectActionRow(int slotIndex) {
+	public static ActionRow buildRoleSelectActionRow(int slotIndex, List<RoleEnum> currentRoles) {
 
 		var options = Arrays.stream(RoleEnum.values())
 			.map(role -> SelectOption.of(role.getLabel(), role.getLabel()))
@@ -95,17 +97,28 @@ public class ButtonUi {
 
 		var menu = StringSelectMenu.create("%s:%d".formatted(ButtonEnum.RSVP_ROLE.getId(), slotIndex))
 			.setPlaceholder(ButtonEnum.RSVP_ROLE.getLabel())
-			.addOptions(options)
-			.build();
+			.setRequiredRange(1, options.size())
+			.addOptions(options);
 
-		return ActionRow.of(menu);
+		if (currentRoles != null) {
+			menu.setDefaultValues(currentRoles.stream().map(RoleEnum::getLabel).toList());
+		}
+
+		return ActionRow.of(menu.build());
 	}
 
 	/**
-	 * Format how a user's signup appears in a slot, like "@User (healer)".
+	 * Format how a user's signup appears in a slot, like "@User (healer/bard)".
 	 */
-	public static String buildSignup(@Nonnull String userMention, @Nonnull RoleEnum role) {
-		return "%s (%s)".formatted(userMention, role.getLabel());
+	public static String buildSignup(@Nonnull String userMention, @Nonnull List<RoleEnum> roles) {
+		return "%s (%s)".formatted(userMention, joinRoles(roles, Parser.ROLE_DELIMITER));
+	}
+
+	/**
+	 * Join role labels for display, like "healer, bard".
+	 */
+	public static String joinRoles(@Nonnull List<RoleEnum> roles, @Nonnull String delimiter) {
+		return String.join(delimiter, roles.stream().map(RoleEnum::getLabel).toList());
 	}
 
 	/**

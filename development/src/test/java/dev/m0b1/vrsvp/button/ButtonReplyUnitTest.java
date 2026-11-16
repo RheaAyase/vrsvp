@@ -107,7 +107,7 @@ class ButtonReplyUnitTest extends TestBase {
 
 		reply.rsvpInterest(buttonInteractionEvent);
 
-		verify(buttonInteractionEvent).reply("Pick your role.");
+		verify(buttonInteractionEvent).reply("Pick your roles.");
 		verify(replyCallbackAction).setEphemeral(true);
 		verify(replyCallbackAction).setComponents(anyCollection());
 		verify(replyCallbackAction).queue();
@@ -120,7 +120,7 @@ class ButtonReplyUnitTest extends TestBase {
 
 		reply.rsvpInterest(buttonInteractionEvent);
 
-		verify(buttonInteractionEvent).reply("Pick a new role or remove your RSVP.");
+		verify(buttonInteractionEvent).reply("Change your roles or remove your RSVP.");
 		verify(replyCallbackAction).queue();
 	}
 
@@ -192,7 +192,7 @@ class ButtonReplyUnitTest extends TestBase {
 		when(messageEmbed.getDescription()).thenReturn(description);
 		when(messageEditAction.setContent(any())).thenThrow(new IllegalArgumentException());
 
-		reply.rsvpSignup(stringSelectInteractionEvent, message, 0, RoleEnum.HEALER);
+		reply.rsvpSignup(stringSelectInteractionEvent, message, 0, List.of(RoleEnum.HEALER));
 
 		verify(messageEditAction).setContent(any());
 		verify(messageEditAction, never()).queue();
@@ -219,7 +219,7 @@ class ButtonReplyUnitTest extends TestBase {
 
 		reply.rsvpToggle(buttonInteractionEvent, message, 0);
 
-		verify(buttonInteractionEvent).editMessage("Pick your role");
+		verify(buttonInteractionEvent).editMessage("Pick your roles");
 		verify(messageEditCallbackAction).setComponents(any(MessageTopLevelComponent.class));
 		verify(messageEditCallbackAction).queue();
 		verify(message, never()).editMessageEmbeds(Collections.emptyList());
@@ -253,7 +253,7 @@ class ButtonReplyUnitTest extends TestBase {
 	@Test
 	void rsvpSignupAddsRoleNextToUserMention() {
 
-		reply.rsvpSignup(stringSelectInteractionEvent, message, 0, RoleEnum.HEALER);
+		reply.rsvpSignup(stringSelectInteractionEvent, message, 0, List.of(RoleEnum.HEALER));
 
 		verify(stringSelectInteractionEvent).editMessage("RSVP added as healer");
 		verify(messageEditCallbackAction).setComponents(anyCollection());
@@ -268,7 +268,7 @@ class ButtonReplyUnitTest extends TestBase {
 
 		when(messageEmbed.getDescription()).thenReturn("> #1, @Testing (bard)");
 
-		reply.rsvpSignup(stringSelectInteractionEvent, message, 0, RoleEnum.MELEE_DPS);
+		reply.rsvpSignup(stringSelectInteractionEvent, message, 0, List.of(RoleEnum.MELEE_DPS));
 
 		verify(stringSelectInteractionEvent).editMessage("RSVP added as melee dps");
 		verify(messageEditAction).setContent("> #1, @Testing (melee dps)");
@@ -281,7 +281,7 @@ class ButtonReplyUnitTest extends TestBase {
 		var rule = "%s: 1".formatted(SlashCommandEnum.RSVP_LIMIT_PER_SLOT.getDescription());
 		when(messageEmbed.getDescription()).thenReturn("%s%n> #1, @Other (cc)".formatted(rule));
 
-		reply.rsvpSignup(stringSelectInteractionEvent, message, 0, RoleEnum.HEALER);
+		reply.rsvpSignup(stringSelectInteractionEvent, message, 0, List.of(RoleEnum.HEALER));
 
 		verify(stringSelectInteractionEvent).editMessage("Signup limit exceeded, cannot RSVP");
 		verify(messageEditCallbackAction).queue();
@@ -294,7 +294,7 @@ class ButtonReplyUnitTest extends TestBase {
 		var limitSlot = "%s: 1".formatted(SlashCommandEnum.RSVP_LIMIT_PER_SLOT.getDescription());
 		when(messageEmbed.getDescription()).thenReturn("%s%n> #1".formatted(limitSlot));
 
-		reply.rsvpSignup(stringSelectInteractionEvent, message, 0, RoleEnum.BARD);
+		reply.rsvpSignup(stringSelectInteractionEvent, message, 0, List.of(RoleEnum.BARD));
 
 		verify(stringSelectInteractionEvent).editMessage("RSVP added as bard");
 		verify(messageEditCallbackAction).queue();
@@ -309,7 +309,7 @@ class ButtonReplyUnitTest extends TestBase {
 		var limitSlot = "%s: 2".formatted(SlashCommandEnum.RSVP_LIMIT_PER_SLOT.getDescription());
 		when(messageEmbed.getDescription()).thenReturn("%s%n> #1".formatted(limitSlot));
 
-		reply.rsvpSignup(stringSelectInteractionEvent, message, 0, RoleEnum.BARD);
+		reply.rsvpSignup(stringSelectInteractionEvent, message, 0, List.of(RoleEnum.BARD));
 
 		verify(stringSelectInteractionEvent).editMessage("RSVP added as bard");
 		verify(messageEditCallbackAction).queue();
@@ -319,11 +319,32 @@ class ButtonReplyUnitTest extends TestBase {
 	}
 
 	@Test
+	void rsvpSignupWithMultipleRoles() {
+
+		when(messageEmbed.getDescription()).thenReturn("**Signups**\n> @Testing (bard)");
+
+		reply.rsvpSignup(stringSelectInteractionEvent, message, 0, List.of(RoleEnum.HEALER, RoleEnum.RANGED_DPS));
+
+		verify(stringSelectInteractionEvent).editMessage("RSVP added as healer, ranged dps");
+		verify(messageEditAction).setContent("**Signups**\n> @Testing (healer/ranged dps)");
+	}
+
+	@Test
+	void rsvpToggleRemovesMultipleRoleSignupFromSlotLine() {
+
+		when(messageEmbed.getDescription()).thenReturn("> #1, @Testing (bard/cc), @Other (dancer)\n> #2");
+
+		reply.rsvpToggle(buttonInteractionEvent, message, 0);
+
+		verify(messageEditAction).setContent("> #1, @Other (dancer)\n> #2");
+	}
+
+	@Test
 	void rsvpSignupForMultipleSlotsNamesTheSlot() {
 
 		when(messageEmbed.getDescription()).thenReturn("> #1\n> #2");
 
-		reply.rsvpSignup(stringSelectInteractionEvent, message, 1, RoleEnum.CC);
+		reply.rsvpSignup(stringSelectInteractionEvent, message, 1, List.of(RoleEnum.CC));
 
 		verify(stringSelectInteractionEvent).editMessage("RSVP added for slot #2 as cc");
 		verify(messageEditAction).setContent("> #1\n> #2, @Testing (cc)");
@@ -334,7 +355,7 @@ class ButtonReplyUnitTest extends TestBase {
 
 		when(messageEmbed.getDescription()).thenReturn("**Signups**\n> @Other (bard)\n\nFooter");
 
-		reply.rsvpSignup(stringSelectInteractionEvent, message, 0, RoleEnum.HEALER);
+		reply.rsvpSignup(stringSelectInteractionEvent, message, 0, List.of(RoleEnum.HEALER));
 
 		verify(stringSelectInteractionEvent).editMessage("RSVP added as healer");
 		verify(messageEditAction).setContent("**Signups**\n> @Other (bard)\n> @Testing (healer)\n\nFooter");
@@ -358,7 +379,7 @@ class ButtonReplyUnitTest extends TestBase {
 		var rule = "%s: 1".formatted(SlashCommandEnum.RSVP_LIMIT_PER_SLOT.getDescription());
 		when(messageEmbed.getDescription()).thenReturn("%s%n**Signups**%n> @Other (cc)".formatted(rule));
 
-		reply.rsvpSignup(stringSelectInteractionEvent, message, 0, RoleEnum.HEALER);
+		reply.rsvpSignup(stringSelectInteractionEvent, message, 0, List.of(RoleEnum.HEALER));
 
 		verify(stringSelectInteractionEvent).editMessage("Signup limit exceeded, cannot RSVP");
 		verify(message, never()).editMessageEmbeds(Collections.emptyList());

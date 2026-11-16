@@ -24,9 +24,9 @@ These are used to generate the RSVP form within the Discord client, starting wit
 
 ## Signing up
 
-Pressing RSVP on an event asks for your role (healer, devotion, asura, bard, dancer, cc, ranged dps, or melee dps),
-which is recorded on its own line under the signups like `@User (healer)`.
-Pressing RSVP again lets you pick a new role or remove your RSVP.
+Pressing RSVP on an event asks for one or more roles (healer, devotion, asura, bard, dancer, cc, ranged dps, or melee dps),
+which are recorded on their own line under the signups like `@User (healer/bard)`.
+Pressing RSVP again shows your current roles to change or lets you remove your RSVP.
 
 Events edited to have several slots show a button for each slot first.
 Picking a slot you are not in asks for your role, and picking a slot you are already in removes you from it.

@@ -1,6 +1,7 @@
 package dev.m0b1.vrsvp.util;
 
 import dev.m0b1.vrsvp.TestBase;
+import dev.m0b1.vrsvp.button.RoleEnum;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -85,6 +86,14 @@ class ParserUnitTest extends TestBase {
 		assertEquals(List.of("@Test1 (cc)", "@Test2 (healer)"), Parser.findSignupsInSlot(input, 0));
 		assertEquals(List.of(), Parser.findSignupsInSlot("**Signups**", 0));
 		assertNull(Parser.findSignupsInSlot(input, 1));
+	}
+
+	@Test
+	void findRolesInSignup() {
+		assertEquals(List.of(RoleEnum.HEALER), Parser.findRolesInSignup("@Testing (healer)"));
+		assertEquals(List.of(RoleEnum.BARD, RoleEnum.RANGED_DPS), Parser.findRolesInSignup("@Testing (bard/ranged dps) "));
+		assertEquals(List.of(RoleEnum.CC), Parser.findRolesInSignup("(note) @Testing (cc/unknown)"));
+		assertEquals(List.of(), Parser.findRolesInSignup("@Testing"));
 	}
 
 	@Test

@@ -4,6 +4,7 @@ import dev.m0b1.vrsvp.TestBase;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.components.buttons.Button;
 import net.dv8tion.jda.api.components.buttons.ButtonStyle;
+import net.dv8tion.jda.api.components.selections.SelectOption;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
 import org.junit.jupiter.api.Test;
 
@@ -11,6 +12,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
 class ButtonUiUnitTest extends TestBase {
@@ -65,19 +67,34 @@ class ButtonUiUnitTest extends TestBase {
 	@Test
 	void buildRoleSelectActionRow() {
 
-		var menu = ButtonUi.buildRoleSelectActionRow(2).getComponents().getFirst().asStringSelectMenu();
+		var menu = ButtonUi.buildRoleSelectActionRow(2, null).getComponents().getFirst().asStringSelectMenu();
 
 		assertEquals("rsvp-role:2", menu.getCustomId());
 		assertEquals(ButtonEnum.RSVP_ROLE.getLabel(), menu.getPlaceholder());
 		assertEquals(RoleEnum.values().length, menu.getOptions().size());
 		assertEquals("healer", menu.getOptions().getFirst().getValue());
 		assertEquals("melee dps", menu.getOptions().getLast().getLabel());
+		assertEquals(1, menu.getMinValues());
+		assertEquals(RoleEnum.values().length, menu.getMaxValues());
+		assertTrue(menu.getOptions().stream().noneMatch(SelectOption::isDefault));
+	}
+
+	@Test
+	void buildRoleSelectActionRowPreselectsCurrentRoles() {
+
+		var menu = ButtonUi.buildRoleSelectActionRow(0, List.of(RoleEnum.BARD, RoleEnum.CC))
+			.getComponents()
+			.getFirst()
+			.asStringSelectMenu();
+
+		var defaults = menu.getOptions().stream().filter(SelectOption::isDefault).map(SelectOption::getValue).toList();
+		assertEquals(List.of("bard", "cc"), defaults);
 	}
 
 	@Test
 	void buildRsvpActionRowsForMultipleSlotsUsesSlotButtons() {
 
-		var actionRows = ButtonUi.buildRsvpActionRows(2, false);
+		var actionRows = ButtonUi.buildRsvpActionRows(2, null);
 
 		assertEquals(1, actionRows.size());
 		assertEquals(2, actionRows.getFirst().getButtons().size());
@@ -86,7 +103,7 @@ class ButtonUiUnitTest extends TestBase {
 	@Test
 	void buildRsvpActionRowsForSingleSlotUsesRoleDropdown() {
 
-		var actionRows = ButtonUi.buildRsvpActionRows(0, false);
+		var actionRows = ButtonUi.buildRsvpActionRows(0, null);
 
 		assertEquals(1, actionRows.size());
 		assertEquals("rsvp-role:0", actionRows.getFirst().getComponents().getFirst().asStringSelectMenu().getCustomId());
@@ -95,7 +112,7 @@ class ButtonUiUnitTest extends TestBase {
 	@Test
 	void buildRsvpActionRowsForSingleSlotWhenSignedUpAddsRemoveButton() {
 
-		var actionRows = ButtonUi.buildRsvpActionRows(1, true);
+		var actionRows = ButtonUi.buildRsvpActionRows(1, List.of());
 
 		assertEquals(2, actionRows.size());
 		assertButtonInformation(actionRows.get(1).getButtons().getFirst(), ButtonStyle.DANGER, "rsvp:0", "Remove RSVP", null);
@@ -121,7 +138,8 @@ class ButtonUiUnitTest extends TestBase {
 
 	@Test
 	void buildSignup() {
-		assertEquals("@Testing (ranged dps)", ButtonUi.buildSignup("@Testing", RoleEnum.RANGED_DPS));
+		assertEquals("@Testing (ranged dps)", ButtonUi.buildSignup("@Testing", List.of(RoleEnum.RANGED_DPS)));
+		assertEquals("@Testing (healer/bard)", ButtonUi.buildSignup("@Testing", List.of(RoleEnum.HEALER, RoleEnum.BARD)));
 	}
 
 	@Test

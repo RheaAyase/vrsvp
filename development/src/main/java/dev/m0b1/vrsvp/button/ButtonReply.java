@@ -87,17 +87,17 @@ public class ButtonReply {
 		var slots = Parser.countSlotsInText(description);
 
 		var reply = "Use these buttons to toggle your RSVP for any slot.";
-		var signedUp = false;
+		List<RoleEnum> currentRoles = null;
 
 		if (slots <= 1) {
 			var userMention = event.getUser().getAsMention();
-			signedUp = isSignedUp(Parser.findSignupsInSlot(description, 0), userMention);
-			reply = signedUp ? "Pick a new role or remove your RSVP." : "Pick your role.";
+			currentRoles = findUserRoles(Parser.findSignupsInSlot(description, 0), userMention);
+			reply = currentRoles != null ? "Change your roles or remove your RSVP." : "Pick your roles.";
 		}
 
 		event.reply(reply)
 			.setEphemeral(true)
-			.setComponents(ButtonUi.buildRsvpActionRows(slots, signedUp))
+			.setComponents(ButtonUi.buildRsvpActionRows(slots, currentRoles))
 			.queue();
 	}
 
@@ -113,15 +113,15 @@ public class ButtonReply {
 	}
 
 	/**
-	 * Signs the user up for the given slot with their chosen role, replacing any role they already had there.
+	 * Signs the user up for the given slot with their chosen roles, replacing any roles they already had there.
 	 */
 	public void rsvpSignup(
 		@Nonnull StringSelectInteractionEvent event,
 		@Nonnull Message message,
 		int slotIndex,
-		@Nonnull RoleEnum role
+		@Nonnull List<RoleEnum> roles
 	) {
-		rsvpUpdate(event, message, slotIndex, role);
+		rsvpUpdate(event, message, slotIndex, roles);
 	}
 
 	/**
@@ -134,13 +134,13 @@ public class ButtonReply {
 	/**
 	 * Adjusts RSVP state for given user and slot and then adjusts source ephemeral message to reflect the change.
 	 *
-	 * Without a role, a user already in the slot is removed and anyone else is asked to pick a role first.
+	 * Without roles, a user already in the slot is removed and anyone else is asked to pick roles first.
 	 */
 	private void rsvpUpdate(
 		@Nonnull GenericComponentInteractionCreateEvent event,
 		@Nonnull Message message,
 		int slotIndex,
-		RoleEnum role
+		List<RoleEnum> roles
 	) {
 
 		Mdc.put(event);
@@ -176,14 +176,14 @@ public class ButtonReply {
 			return;
 		}
 
-		if ( ! signedUp && role == null) {
-			event.editMessage("Pick your role%s".formatted(forSlot))
-				.setComponents(ButtonUi.buildRoleSelectActionRow(slotIndex))
+		if ( ! signedUp && roles == null) {
+			event.editMessage("Pick your roles%s".formatted(forSlot))
+				.setComponents(ButtonUi.buildRoleSelectActionRow(slotIndex, null))
 				.queue();
 			return;
 		}
 
-		var signup = role == null ? null : ButtonUi.buildSignup(userMention, role);
+		var signup = roles == null ? null : ButtonUi.buildSignup(userMention, roles);
 		var editedDescription = ButtonUi.editRsvpInSlot(message, userMention, signup, slotIndex);
 
 		try {
@@ -192,11 +192,11 @@ public class ButtonReply {
 				.setContent(editedDescription)
 				.queue();
 
-			var reply = role == null
+			var reply = roles == null
 				? "RSVP removed%s".formatted(forSlot)
-				: "RSVP added%s as %s".formatted(forSlot, role.getLabel());
+				: "RSVP added%s as %s".formatted(forSlot, ButtonUi.joinRoles(roles, ", "));
 
-			event.editMessage(reply).setComponents(ButtonUi.buildRsvpActionRows(slots, role != null)).queue();
+			event.editMessage(reply).setComponents(ButtonUi.buildRsvpActionRows(slots, roles)).queue();
 
 		} catch (IllegalArgumentException _) {
 
@@ -216,6 +216,17 @@ public class ButtonReply {
 
 	private boolean isSignedUp(@Nonnull List<String> signups, @Nonnull String userMention) {
 		return signups.stream().anyMatch(signup -> signup.contains(userMention));
+	}
+
+	/**
+	 * Roles the user signed up with, or null if they are not signed up.
+	 */
+	private List<RoleEnum> findUserRoles(@Nonnull List<String> signups, @Nonnull String userMention) {
+		return signups.stream()
+			.filter(signup -> signup.contains(userMention))
+			.findFirst()
+			.map(Parser::findRolesInSignup)
+			.orElse(null);
 	}
 
 	private Button findRsvpButtonInMessage(@Nonnull Message message) {
