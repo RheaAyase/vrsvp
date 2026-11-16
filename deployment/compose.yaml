@@ -1,6 +1,7 @@
 # Self-hosting with Podman (or Docker), run from the repository root:
 #   cp deployment/.env.example deployment/.env    # then fill in the bot token
 #   podman compose --file deployment/compose.yaml up --detach --build
+# Always pass --build, otherwise podman-compose reuses the last image and the bot runs (and publishes commands from) old code
 
 services:
   vrsvp:
@@ -9,6 +10,8 @@ services:
       dockerfile: deployment/Dockerfile
       target: production
     image: localhost/vrsvp:latest
+    # Docker Compose rebuilds on every "up" with this, podman-compose only builds missing images unless given --build
+    pull_policy: build
     container_name: vrsvp
     env_file: .env
     restart: always

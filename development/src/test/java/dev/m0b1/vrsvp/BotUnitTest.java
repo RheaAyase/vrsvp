@@ -69,7 +69,7 @@ class BotUnitTest extends TestBase {
 
 		verify(jda).updateCommands();
 		verify(commandListUpdateAction).addCommands(any(CommandData.class));
-		verify(commandListUpdateAction).queue();
+		verify(commandListUpdateAction).queue(any(), any());
 	}
 
 	// Test utility method(s)

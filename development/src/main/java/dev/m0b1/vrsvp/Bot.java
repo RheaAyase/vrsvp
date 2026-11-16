@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.Guild;
+import net.dv8tion.jda.api.interactions.commands.Command;
 import org.springframework.stereotype.Service;
 
 @RequiredArgsConstructor
@@ -57,13 +58,25 @@ public class Bot {
 			.log();
 	}
 
+	/**
+	 * Replace all global slash commands with the current ones, so renamed or removed commands disappear from Discord.
+	 */
 	private void updateBotSlashCommands() {
 
 		var slashCommand = SlashCommandUi.create();
 
 		jda.updateCommands()
 			.addCommands(slashCommand)
-			.queue();
+			.queue(
+				commands -> log.atInfo()
+					.setMessage("Slash commands published")
+					.addKeyValue("commands", commands.stream().map(Command::getName).toList())
+					.log(),
+				exception -> log.atError()
+					.setMessage("Slash commands could not be published")
+					.setCause(exception)
+					.log()
+			);
 	}
 
 }
