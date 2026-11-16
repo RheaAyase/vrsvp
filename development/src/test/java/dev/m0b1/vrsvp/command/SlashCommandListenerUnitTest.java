@@ -7,10 +7,12 @@ import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 
+import java.time.Instant;
 import java.util.stream.IntStream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -41,6 +43,8 @@ class SlashCommandListenerUnitTest extends TestBase {
 	@Test
 	void slashCommandDefaultsInputsToInvalidValuesIfNotFound() {
 
+		var before = Instant.now().getEpochSecond();
+
 		when(slashCommandInteractionEvent.getOption(any())).thenReturn(null);
 		when(slashCommandInteractionEvent.getName()).thenReturn(SlashCommandUi.INVOCATION);
 
@@ -49,7 +53,8 @@ class SlashCommandListenerUnitTest extends TestBase {
 		verify(reply).rsvpCreation(eq(slashCommandInteractionEvent), inputsArgumentCaptor.capture());
 
 		var inputs = inputsArgumentCaptor.getValue();
-		assertNull(inputs.getStartTimestamp());
+		var after = Instant.now().getEpochSecond();
+		assertTrue(before <= inputs.getStartTimestamp() && inputs.getStartTimestamp() <= after);
 		assertNull(inputs.getRsvpLimitPerSlot());
 	}
 

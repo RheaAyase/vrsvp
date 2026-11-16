@@ -19,7 +19,7 @@ It can also be self-hosted using the source code here.
 
 These are used to generate the RSVP form within the Discord client, starting with `/vrsvp`.
 
-- `start`: [HammerTime](https://hammertime.cyou/) timestamp
+- `start`: Optional, [HammerTime](https://hammertime.cyou/) timestamp in seconds since 1970, defaults to the current time
 - `rsvp-limit-per-slot`: Optional, a slot cannot have more people signed up than this
 
 ## RSVP form editing

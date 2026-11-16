@@ -19,8 +19,8 @@ public enum SlashCommandEnum {
 		"time",
 		2_051_244_000L, // 2035-01-01
 		0,
-		"Timestamp from https://hammertime.cyou/ like '1684043839'",
-		true
+		"Timestamp from https://hammertime.cyou/ like '1684043839', defaults to now",
+		false
 	);
 
 	private final String id;

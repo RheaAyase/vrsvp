@@ -40,7 +40,7 @@ class SlashCommandUiUnitTest extends TestBase {
 	@Test
 	void inputsAreMarkedRequiredAsNeeded() {
 		var options = command.getOptions();
-		assertTrue(options.get(0).isRequired()); // Start
+		assertFalse(options.get(0).isRequired()); // Start
 		assertFalse(options.get(1).isRequired()); // RSVP limit per slot
 	}
 

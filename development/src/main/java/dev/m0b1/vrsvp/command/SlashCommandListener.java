@@ -8,6 +8,8 @@ import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import org.springframework.stereotype.Service;
 
 import jakarta.annotation.Nonnull;
+import java.time.Instant;
+import java.util.Objects;
 
 @RequiredArgsConstructor
 @Service
@@ -43,7 +45,10 @@ public class SlashCommandListener extends ListenerAdapter {
 		Mdc.put(event);
 
 		var inputs = new SlashCommandInputs();
-		inputs.setStartTimestamp(getSlashCommandInput(event, SlashCommandEnum.START));
+		inputs.setStartTimestamp(Objects.requireNonNullElseGet(
+			getSlashCommandInput(event, SlashCommandEnum.START),
+			() -> Math.toIntExact(Instant.now().getEpochSecond())
+		));
 		inputs.setRsvpLimitPerSlot(getSlashCommandInput(event, SlashCommandEnum.RSVP_LIMIT_PER_SLOT));
 
 		log.atInfo()
