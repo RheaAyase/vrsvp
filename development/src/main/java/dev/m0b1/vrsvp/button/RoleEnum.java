@@ -14,7 +14,8 @@ public enum RoleEnum {
 	DANCER("dancer"),
 	CC("cc"),
 	RANGED_DPS("ranged dps"),
-	MELEE_DPS("melee dps");
+	MELEE_DPS("melee dps"),
+	LP_DISPEL_SAGE("lp-dispel sage");
 
 	private final String label;
 

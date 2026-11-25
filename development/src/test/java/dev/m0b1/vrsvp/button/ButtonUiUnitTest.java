@@ -73,7 +73,7 @@ class ButtonUiUnitTest extends TestBase {
 		assertEquals(ButtonEnum.RSVP_ROLE.getLabel(), menu.getPlaceholder());
 		assertEquals(RoleEnum.values().length, menu.getOptions().size());
 		assertEquals("healer", menu.getOptions().getFirst().getValue());
-		assertEquals("melee dps", menu.getOptions().getLast().getLabel());
+		assertEquals("lp-dispel sage", menu.getOptions().getLast().getLabel());
 		assertEquals(1, menu.getMinValues());
 		assertEquals(RoleEnum.values().length, menu.getMaxValues());
 		assertTrue(menu.getOptions().stream().noneMatch(SelectOption::isDefault));
